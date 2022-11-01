@@ -9,3 +9,4 @@ ray~=1.13.0
 pydantic~=1.9.0
 click~=8.0
 click-logging~=1.0
+smart-open~=6.2.0

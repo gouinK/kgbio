@@ -6,6 +6,7 @@ import random
 import sklearn
 import anndata
 import itertools
+import celltypist
 import matplotlib
 import numpy as np
 import scanpy as sc
@@ -51,7 +52,7 @@ def collect_cellr_metrics(inpath=None):
 	return df
 
 
-def plot_cellR_metrics(df, sampleid=None, metrics=None, hues=None, dotsize=4, fontsize=4, markerscale=0.1):
+def plot_cellR_metrics(df=None, sampleid=None, metrics=None, hues=None, dotsize=4, fontsize=4, markerscale=0.1):
 
 	if metrics is None:
 		metrics = ['Estimated_Number_of_Cells', 'Sequencing_Saturation', 'Median_Genes_per_Cell', 'Total_Genes_Detected', 'Median_UMI_Counts_per_Cell']
@@ -92,12 +93,8 @@ def plot_cellR_metrics(df, sampleid=None, metrics=None, hues=None, dotsize=4, fo
 						   palette=palette,
 						   ax=ax)
 
-		_= gf.fix_plot(ax,
-					   ylabel='',
-					   yticks=[],
-					   legend=False,
-					   fontsize=fontsize,
-					   pad=2)
+		plot_dict = {'ylabel': '', 'yticks': [], 'legend': False, 'fontsize': fontsize}
+		_= gf.fix_plot(ax, plot_dict=plot_dict)
 
 		if ax.is_first_row():
 			_= ax.set_title(h, fontsize=fontsize)
@@ -111,7 +108,7 @@ def plot_cellR_metrics(df, sampleid=None, metrics=None, hues=None, dotsize=4, fo
 	return fig,axs
 
 
-def calc_sparcity(adata):
+def calc_sparcity(adata=None):
 
 	nnz = adata.X.count_nonzero()
 	total = adata.X.shape[0] * adata.X.shape[1]
@@ -120,7 +117,7 @@ def calc_sparcity(adata):
 	return sparcity
 
 
-def annotate_genes(adata, remove_noncoding=False, species=None):
+def annotate_genes(adata=None, remove_noncoding=False, species=None):
 
     print(f'original adata shape: {adata.shape}')
 
@@ -159,7 +156,7 @@ def annotate_genes(adata, remove_noncoding=False, species=None):
     return adata
 
 
-def qc_filtering(adata, percentile=5, mtThresh=10, scrublet=True, do_plot=False, strip_plot=False, do_filter=True):
+def qc_filtering(adata=None, percentile=5, mtThresh=10, scrublet=True, do_plot=False, strip_plot=False, do_filter=True):
     
 	if scrublet:
 		doublet_rate = 0.07
@@ -201,13 +198,13 @@ def qc_filtering(adata, percentile=5, mtThresh=10, scrublet=True, do_plot=False,
 									color='k',
 									ax=ax)
 			
-			_= gf.fix_plot(ax,
-							ylim=(0,ylim),
-							yticks=np.arange(start=0, stop=ylim, step=step),
-							xticklabels=adata.obs.sampleID.unique().tolist(),
-							x_rotation=90,
-							fontsize=4,
-							pad=2)
+			plot_dict = {'ylim': (0, ylim),
+						 'yticks': np.arange(start=0, stop=ylim, step=step),
+						 'xticklabels': adata.obs.sampleID.unique().tolist(),
+						 'x_rotation': 90,
+						 'fontsize': 4}
+						 
+			_= gf.fix_plot(ax, plot_dict=plot_dict)
 
 		plt.tight_layout()
 
@@ -236,4 +233,25 @@ def spatial_plots(adata=None, outdir=None):
     
     plt.savefig(outdir+'/spatial_leiden.png', dpi=600, bbox_inches='tight')
     
-    return 
+    return
+
+
+def run_celltypist(adata=None, model=None, majority_voting=True):
+
+	celltypist.models.download_models(force_update = True)
+
+	model_info = celltypist.models.Model.load(model = model)
+	print(f"Using {model}:")
+	print(model_info)
+	print("\nAvailable cell type labels:")
+	print(model_info.cell_types)
+
+	predictions = celltypist.annotate(filename= adata,
+									  model = model,
+									  majority_voting = majority_voting,
+									  mode = 'prob match',
+									  p_thres = 0.5)
+
+	adata2 = predictions.to_adata()
+
+	return adata2

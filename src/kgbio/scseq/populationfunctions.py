@@ -25,7 +25,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def pct_df(adata, groupby='leiden', rep=None, xcat=None, drop_na=True, thresh=None, normalization=None, receptor_column=None):
+def pct_df(adata=None, groupby='leiden', rep=None, xcat=None, drop_na=True, thresh=None, normalization=None, receptor_column=None):
     
     if rep is None:
 
@@ -95,7 +95,7 @@ def pct_df(adata, groupby='leiden', rep=None, xcat=None, drop_na=True, thresh=No
     return df
 
 
-def shannon(adata, groupby='leiden', rep=None, xcat=None, drop_na=True, thresh=None, normalization='cells', receptor_column=None):
+def shannon(adata=None, groupby='leiden', rep=None, xcat=None, drop_na=True, thresh=None, normalization='cells', receptor_column=None):
     """
     calculate normalized shannon entropy (SE) clonality
     clonality = 1 - (SE/ln(# of tcrs))
@@ -143,7 +143,7 @@ def shannon(adata, groupby='leiden', rep=None, xcat=None, drop_na=True, thresh=N
     return df
     
 
-def pct_comparison(adata,df=None,groupby='leiden',rep=None,xcat=None,hcat=None,ycat=None,normalization='cells',receptor_column=None,logic=None,
+def pct_comparison(adata=None,df=None,groupby='leiden',rep=None,xcat=None,hcat=None,ycat=None,normalization='cells',receptor_column=None,logic=None,
                     xorder=None,horder=None,show_stats=True,calc_pct=False,calc_shannon=False,drop_na=True,thresh=None,
                     dotsize=2,fontsize=4,ylim=None,figsize=None,return_df=False,size_max=None,vmin=-1,vmax=1,plot_type='boxplot',tight=False):
                 
@@ -243,16 +243,18 @@ def pct_comparison(adata,df=None,groupby='leiden',rep=None,xcat=None,hcat=None,y
                 ymin = df[ycat].min() - 0.1*df[ycat].min()
                 ymax = df[ycat].max() + 0.1*df[ycat].max()
             
-            _= gf.fix_plot(ax=axs,
-                           ylim=(ymin,ymax),
-                           xlabel='',
-                           ylabel=ycat,
-                           fixlegend=True,
-                           xticks=np.arange(len(xorder)),
-                           xticklabels=xorder,
-                           x_rotation=90,
-                           fontsize=fontsize,
-                           pad=2)
+            plot_dict = {
+                         'ylim': (ymin, ymax),
+                         'xlabel': '',
+                         'ylabel': ycat,
+                         'fixlegend': True,
+                         'xticks': np.arange(len(xorder)),
+                         'xticklabels': xorder,
+                         'x_rotation': 90,
+                         'fontsize': fontsize,
+                         }
+
+            _= gf.fix_plot(ax=axs, plot_dict=plot_dict)
             
             if tight:
                 plt.tight_layout()
@@ -328,17 +330,19 @@ def pct_comparison(adata,df=None,groupby='leiden',rep=None,xcat=None,hcat=None,y
                 if ylim is None:
                     ymin = df[ycat].min() - 0.1*df[ycat].min()
                     ymax = df[ycat].max() + 0.1*df[ycat].max()
-                    
-                _= gf.fix_plot(ax=axs,
-                               ylim=(ymin,ymax),
-                               xlabel='',
-                               ylabel=ycat,
-                               fixlegend=True,
-                               xticks=np.arange(len(xorder)),
-                               xticklabels=xorder,
-                               x_rotation=90,
-                               fontsize=fontsize,
-                               pad=2)
+                
+                plot_dict = {
+                            'ylim': (ymin, ymax),
+                            'xlabel': '',
+                            'ylabel': ycat,
+                            'fixlegend': True,
+                            'xticks': np.arange(len(xorder)),
+                            'xticklabels': xorder,
+                            'x_rotation': 90,
+                            'fontsize': fontsize,
+                            }
+
+                _= gf.fix_plot(ax=axs, plot_dict=plot_dict)
             
             if tight:
                 plt.tight_layout()
@@ -407,9 +411,8 @@ def pct_comparison(adata,df=None,groupby='leiden',rep=None,xcat=None,hcat=None,y
                            color='k',
                            linewidth=0.5)
 
-        _= gf.fix_plot(axs[1],
-                       xticks=[],
-                       yticks=[])
+        plot_dict = {'xticks': [], 'yticks': []}
+        _= gf.fix_plot(axs[1], plot_dict=plot_dict)
         
     elif (plot_type=='pie_chart'):
 
@@ -438,10 +441,8 @@ def pct_comparison(adata,df=None,groupby='leiden',rep=None,xcat=None,hcat=None,y
                       textprops={'fontsize':fontsize},
                       wedgeprops={'linewidth':0})
             
-            _= gf.fix_plot(ax,
-                           title=x,
-                           fontsize=fontsize,
-                           pad=2)
+            plot_dict = {'title': x, 'fontsize': fontsize}
+            _= gf.fix_plot(ax, plot_dict=plot_dict)
 
     if return_df:
         return fig, axs, df
@@ -451,7 +452,7 @@ def pct_comparison(adata,df=None,groupby='leiden',rep=None,xcat=None,hcat=None,y
 
 
 ## pie chart of cluster distribution for each category
-def custom_pie(adata, comparator=None, reference=None, groupby='leiden', labels=None, fontsize=None, figsize=None):
+def custom_pie(adata=None, comparator=None, reference=None, groupby='leiden', labels=None, fontsize=None, figsize=None):
 
     samp1 = adata[[all(adata.obs.loc[x,y]==comparator[y] for y in comparator) for x in adata.obs.index]]
     samp2 = adata[[all(adata.obs.loc[x,y]==reference[y] for y in reference) for x in adata.obs.index]] 
@@ -492,15 +493,13 @@ def custom_pie(adata, comparator=None, reference=None, groupby='leiden', labels=
                textprops={'fontsize':fontsize},
                wedgeprops={'linewidth':0})
 
-        _= gf.fix_plot(ax,
-                       title=label,
-                       fontsize=fontsize,
-                       pad=2)
+        plot_dict = {'title': label, 'fontsize': fontsize}
+        _= gf.fix_plot(ax, plot_dict=plot_dict)
         
     return fig,axs
 
 
-def simplify_cell_annotation(adata, celldict=None, flavor=None):
+def simplify_cell_annotation(adata=None, celldict=None, flavor=None):
 
     if celldict is None:
 
@@ -581,7 +580,7 @@ def simplify_cell_annotation(adata, celldict=None, flavor=None):
     return adata
 
 
-def cmp_classifications(adata, sampleid=None, reference=None, comparators=None, classifications=None, metrics=None):
+def cmp_classifications(adata=None, sampleid=None, reference=None, comparators=None, classifications=None, metrics=None):
 
     if metrics is None:
         metrics = ['AMI', 'ARI', 'pct_match']

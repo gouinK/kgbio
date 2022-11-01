@@ -26,7 +26,7 @@ warnings.filterwarnings("ignore")
 
 ## calculate Gini coefficient
 ## from: http://www.statsdirect.com/help/default.htm#nonparametric_methods/gini.htm
-def gini(adata, receptor_column=None):
+def gini(adata=None, receptor_column=None):
 
     tcrs = adata.obs[receptor_column].value_counts()
     tcrs = tcrs[tcrs>0].to_numpy()
@@ -40,7 +40,7 @@ def gini(adata, receptor_column=None):
 
 ## calculate normalized shannon entropy clonality
 ## clonality = 1 - (SE/ln(# of tcrs))
-def shannon(adata, receptor_column=None):
+def shannon(adata=None, receptor_column=None):
 
     totalsize = len(adata)
 
@@ -56,7 +56,7 @@ def shannon(adata, receptor_column=None):
     return (1 - (runningSum/np.log(totaltcrs)))
 
 ## Jensen-Shannon diversity
-def JSD(adata, first, second, category, topn=None, receptor_column=None):
+def JSD(adata=None, first=None, second=None, category=None, topn=None, receptor_column=None):
     
     if (topn is not None):
         firstCount = adata[(adata.obs[category]==first)].obs[receptor_column].value_counts().sort_values(ascending=False)
@@ -114,7 +114,7 @@ def JSD(adata, first, second, category, topn=None, receptor_column=None):
     return 0.5*(KL_P + KL_Q)
 
 
-def clonality_df(adata, groupby='leiden', rep=None, xcat=None, metrics=['shannon','gini'], drop_na=True, receptor_column=None):
+def clonality_df(adata=None, groupby='leiden', rep=None, xcat=None, metrics=['shannon','gini'], drop_na=True, receptor_column=None):
 
     pt = adata.obs[rep].unique().tolist()
     tx = adata.obs[xcat].unique().tolist()
@@ -151,7 +151,7 @@ def clonality_df(adata, groupby='leiden', rep=None, xcat=None, metrics=['shannon
     return df
 
 
-def clonality_boxplot(adata, df=None, groupby=None, rep=None, xcat=None, hcat=None,
+def clonality_boxplot(adata=None, df=None, groupby=None, rep=None, xcat=None, hcat=None,
                         xorder=None, horder=None,
                         metrics = ['shannon','gini'], receptor_column=None,
                         show_stats=True, calc_pct=True, drop_na=True,
@@ -216,13 +216,8 @@ def clonality_boxplot(adata, df=None, groupby=None, rep=None, xcat=None, hcat=No
                 else:
                     ylim = (-0.1, 1.1)
 
-            _= gf.fix_plot(ax,
-                           ylim=ylim,
-                           xlabel='',
-                           title=m,
-                           fontsize=2,
-                           markerscale=0.05,
-                           )
+            plot_dict = {'ylim': ylim, 'xlabel': '', 'title': m, 'fontsize': m, 'markerscale': 0.05}
+            _= gf.fix_plot(ax, plot_dict=plot_dict)
                 
     else:
             
@@ -286,20 +281,15 @@ def clonality_boxplot(adata, df=None, groupby=None, rep=None, xcat=None, hcat=No
                 else:
                     ylim = (-0.1, 1.1)
 
-            _= gf.fix_plot(ax,
-                           ylim=ylim,
-                           xlabel='',
-                           title=f'{m} {s}',
-                           fontsize=2,
-                           markerscale=0.05,
-                           )
+            plot_dict = {'ylim': ylim, 'xlabel': '', 'title': f'{m} {s}', 'fontsize': 2, 'markerscale': 0.05}
+            _= gf.fix_plot(ax, plot_dict=plot_dict)
             
     plt.tight_layout()
 
     return fig,axs
 
 
-def clonality_lineplot(adata, df=None, rep=None, xcat=None, hcat=None,
+def clonality_lineplot(adata=None, df=None, rep=None, xcat=None, hcat=None,
                         xorder=None, horder=None,
                         metrics=['shannon','gini'], receptor_column=None,
                         show_stats=True, calc_pct=True, drop_na=True,
@@ -540,7 +530,7 @@ def receptor_transition(adata=None,df=None,calc=True,groupby=None,tx=None,tx2=No
 
 
 
-def vdj_usage_heatmap(adata,df=None,calc_pct=True,comparator=None,reference=None,logic_comp='and',logic_ref='and',
+def vdj_usage_heatmap(adata=None,df=None,calc_pct=True,comparator=None,reference=None,logic_comp='and',logic_ref='and',
                         groupby=None,rep='cohort',normalization='cells',receptor_column=None,drop_na=True,thresh=None,
                         paired_test=False,vmin=None,vmax=None,size_max=None,fontsize=4,figsize=(2,2)):
     

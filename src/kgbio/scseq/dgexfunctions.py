@@ -24,7 +24,7 @@ import matplotlib.gridspec as gridspec
 from kgbio.scseq import generalfunctions as gf
 
 
-def leiden_dgex(adata, groupby='leiden', use_raw=False, method='wilcoxon', pts=True, tie_correct=True):
+def leiden_dgex(adata=None, groupby='leiden', use_raw=False, method='wilcoxon', pts=True, tie_correct=True):
 
     sc.tl.rank_genes_groups(adata,
                             groupby=groupby,
@@ -46,7 +46,7 @@ def leiden_dgex(adata, groupby='leiden', use_raw=False, method='wilcoxon', pts=T
     return dgex
 
 
-def cepo_dgex(adata, groupby='leiden'):
+def cepo_dgex(adata=None, groupby='leiden'):
 
     st = adata.obs[groupby].unique().tolist()
     nSubs = len(st)
@@ -77,7 +77,7 @@ def cepo_dgex(adata, groupby='leiden'):
     return finaldf
 
 
-def custom_dgex(adata, comparator, reference, grouping_type='custom', groupby=None, logic='and', bycluster=True, filter_pval=True):
+def custom_dgex(adata=None, comparator=None, reference=None, grouping_type='custom', groupby=None, logic='and', bycluster=True, filter_pval=True):
 
     """
     if grouping_type is 'normal', then creates annotations based on groups from one obs column (groupby).
@@ -162,7 +162,7 @@ def custom_dgex(adata, comparator, reference, grouping_type='custom', groupby=No
     return dgex
 
 
-def dgex_plot(adata, dgex=None, groupby='leiden', topn=20, pvalCutoff=0.05, fcCutoff=1, pctCutoff=0.3, use_FDR=True,
+def dgex_plot(adata=None, dgex=None, groupby='leiden', topn=20, pvalCutoff=0.05, fcCutoff=1, pctCutoff=0.3, use_FDR=True,
               dendro=False, plot_type='dotplot', cmap='Reds', figsize=None, vmin=0, vmax=1, fontsize=4, size_max=None):
     
     """
@@ -280,7 +280,7 @@ def dgex_plot(adata, dgex=None, groupby='leiden', topn=20, pvalCutoff=0.05, fcCu
 
 #     return enr_results
 
-def filter_pathways(enr_results, significance='fdr', pval_cutoff=0.05, direction=None, test='enrich', add_blacklist=None, term_overlap=0.2, gene_overlap=0.5, fontsize=2, figsize=None, ax=None):
+def filter_pathways(enr_results=None, significance='fdr', pval_cutoff=0.05, direction=None, test='enrich', add_blacklist=None, term_overlap=0.2, gene_overlap=0.5, fontsize=2, figsize=None, ax=None):
 
     blacklist = ['Homo','sapiens','Immune','immune','Cell','Cellular','cell','cellular','Pathway','pathway','Response','response','to','of','in']
     
@@ -391,10 +391,7 @@ def filter_pathways(enr_results, significance='fdr', pval_cutoff=0.05, direction
                height=0.5,
                tick_label=df.index.tolist())
     
-    _= gf.fix_plot(ax,
-                   yticklabels=df.index.tolist(),
-                   xlabel='-log10(pval)',
-                   fontsize=fontsize,
-                   pad=2)
+    plot_dict = {'yticklabels': df.index.tolist(), 'xlabel': '-log10(pval)', 'fontsize': fontsize, 'pad': 2}
+    _= gf.fix_plot(ax, plot_dict=plot_dict)
 
     return ax,tmp

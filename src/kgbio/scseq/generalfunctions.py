@@ -1,11 +1,13 @@
 import os
 import re
 import math
+import scvi
 import scipy
 import random
 import sklearn
 import anndata
 import itertools
+import celltypist
 import matplotlib
 import numpy as np
 import scanpy as sc
@@ -25,6 +27,7 @@ from matplotlib.projections.polar import PolarAxes
 from matplotlib.projections import register_projection
 from matplotlib.spines import Spine
 from matplotlib.transforms import Affine2D
+from matplotlib import font_manager
 
 from seaborn import cm
 from seaborn.axisgrid import Grid
@@ -35,48 +38,94 @@ from seaborn.utils import (despine, axis_ticklabels_overlap, relative_luminance,
 from kgbio.scseq import qcfunctions as qc
 
 
-def fix_plot(axs,fontsize=4,pad=0.4,grid=False,xlabel=None,ylabel=None,xticks=None,yticks=None,
-              xlim=None,ylim=None,xticklabels=None,yticklabels=None,x_rotation=0,y_rotation=0,
-             snsfig=True,legend=True,fixlegend=False,markerscale=0.2,title=None,weight='regular'):
+def fix_plot(axs, plot_dict=None, fontdir=None):
+    
+    if fontdir is not None:
+        try:
+            font_files = font_manager.findSystemFonts(fontpaths=fontdir)
+
+            for font_file in font_files:
+                font_manager.fontManager.addfont(font_file)
+        except:
+            pass
+
+    ## default settings
+    default_plot_dict = {
+                            'weight': 'regular',
+                            'family': 'Helvetica',
+                            'fontsize': 8,
+                            'pad': 2,
+                            'grid': False,
+                            'x_rotation': 0,
+                            'y_rotation': 0,
+                            'legend': True,
+                            'fixlegend': False,
+                            'snsfig': True,
+                            'rm_legend_title': False,
+                            'legend_loc': 'upper left',
+                            'markerscale': 0.2,
+                            'frame': True,
+                            'subplot_behavior': True
+                        }
+
+    ## Update settings based on input dict
+    for key in plot_dict.keys():
+        default_plot_dict[key] = plot_dict[key]
 
     # set font
-    plt.rcParams['font.family'] = 'Roboto'
-    plt.rcParams['font.weight'] = 'regular'
+    plt.rcParams['font.family'] = default_plot_dict['family']
+    plt.rcParams['font.weight'] = default_plot_dict['weight']
 
-    _= axs.tick_params(axis='both',labelsize=fontsize,pad=pad)
-    _= axs.grid(visible=grid)
+    _= axs.tick_params(axis= 'both', labelsize= default_plot_dict['fontsize'], pad= default_plot_dict['pad'])
+    _= axs.grid(visible= default_plot_dict['grid'])
+    _= axs.set_frame_on(default_plot_dict['frame'])
 
-    if xlim is not None:
-        _= axs.set_xlim(xlim)
-    if ylim is not None:
-        _= axs.set_ylim(ylim)
-    if xticks is not None:
-        _= axs.set_xticks(xticks)
-    if xticklabels is not None:
-        _= axs.set_xticklabels(xticklabels,fontsize=fontsize,rotation=x_rotation,weight=weight,fontfamily='Roboto')
-    if yticks is not None:
-        _= axs.set_yticks(yticks)
-    if yticklabels is not None:
-        _= axs.set_yticklabels(yticklabels,fontsize=fontsize,rotation=y_rotation,weight=weight,fontfamily='Roboto')
-    if xlabel is not None:
-        _= axs.set_xlabel(xlabel,fontsize=fontsize,labelpad=pad,weight=weight,fontfamily='Roboto')
-    if ylabel is not None:
-        _= axs.set_ylabel(ylabel,fontsize=fontsize,labelpad=pad,weight=weight,fontfamily='Roboto')
-    if title is not None:
-        _= axs.set_title(title,fontsize=fontsize,pad=pad*4,weight='bold',fontfamily='Roboto')
+    if 'xlim' in default_plot_dict.keys():
+        _= axs.set_xlim(default_plot_dict['xlim'])
+    if 'ylim' in default_plot_dict.keys():
+        _= axs.set_ylim(default_plot_dict['ylim'])
+    if 'xticks' in default_plot_dict.keys():
+        _= axs.set_xticks(default_plot_dict['xticks'])
+    if 'xticklabels' in default_plot_dict.keys():
+        _= axs.set_xticklabels(default_plot_dict['xticklabels'], fontsize= default_plot_dict['fontsize'], rotation= default_plot_dict['x_rotation'], weight= default_plot_dict['weight'], fontfamily=default_plot_dict['family'])
+    if 'yticks' in default_plot_dict.keys():
+        _= axs.set_yticks(default_plot_dict['yticks'])
+    if 'yticklabels' in default_plot_dict.keys():
+        _= axs.set_yticklabels(default_plot_dict['yticklabels'], fontsize= default_plot_dict['fontsize'], rotation= default_plot_dict['y_rotation'], weight= default_plot_dict['weight'], fontfamily=default_plot_dict['family'])
+    if 'xlabel' in default_plot_dict.keys():
+        _= axs.set_xlabel(default_plot_dict['xlabel'], fontsize= default_plot_dict['fontsize'], labelpad= default_plot_dict['pad'], weight= default_plot_dict['weight'], fontfamily= default_plot_dict['family'])
+    if 'ylabel' in default_plot_dict.keys():
+        _= axs.set_ylabel(default_plot_dict['ylabel'], fontsize= default_plot_dict['fontsize'], labelpad= default_plot_dict['pad'], weight= default_plot_dict['weight'], fontfamily= default_plot_dict['family'])
+    if 'title' in default_plot_dict.keys():
+        _= axs.set_title(default_plot_dict['title'], fontsize= default_plot_dict['fontsize'], pad= default_plot_dict['pad']*4, weight= 'bold', fontfamily= default_plot_dict['family'])
+    if 'logy' in default_plot_dict.keys():
+        _= axs.set_yscale('log', base=10)
 
-    if legend and fixlegend:    
-        if snsfig:
-            plt.setp(axs.get_legend().get_texts(),fontsize=fontsize/2)
-            plt.setp(axs.get_legend().get_title(),fontsize=fontsize/2)
+    if default_plot_dict['subplot_behavior']:
+        try:
+            _= axs.label_outer()
+        except Exception as e:
+            pass
+
+    if default_plot_dict['legend'] and default_plot_dict['fixlegend']:
+            
+        axs.legend(handletextpad= 0.5, loc= default_plot_dict['legend_loc'])
+        
+        if default_plot_dict['rm_legend_title']:
+            axs.legend().set_title('')
+            
+        if default_plot_dict['snsfig']:
+            plt.setp(axs.get_legend().get_texts(),fontsize= default_plot_dict['fontsize']/2)
+            plt.setp(axs.get_legend().get_title(),fontsize= default_plot_dict['fontsize']/2)
             plt.setp(axs.get_legend().get_frame(),visible=False)
-            [plt.setp(x,linewidth=1,markersize=0.1) for x in axs.get_legend().findobj() if isinstance(x,matplotlib.lines.Line2D)]
-            [plt.setp(x,width=3,height=3) for x in axs.get_legend().findobj() if isinstance(x,matplotlib.patches.Rectangle)]
-            [plt.setp(x,width=0.1,height=0.1) for x in axs.get_legend().findobj() if isinstance(x,matplotlib.offsetbox.DrawingArea)]
-            [plt.setp(x,sizes=[1]) for x in axs.get_legend().findobj() if isinstance(x,matplotlib.collections.PathCollection)]
+            [plt.setp(x, linewidth=1) for x in axs.get_legend().findobj() if isinstance(x,matplotlib.lines.Line2D)]
+            [plt.setp(x, width=3, height=3) for x in axs.get_legend().findobj() if isinstance(x,matplotlib.patches.Rectangle)]
+            [plt.setp(x, width=0.1, height=0.1) for x in axs.get_legend().findobj() if isinstance(x,matplotlib.offsetbox.DrawingArea)]
+            [plt.setp(x, sizes=[1]) for x in axs.get_legend().findobj() if isinstance(x,matplotlib.collections.PathCollection)]
         else:
-            axs.legend(fontsize=fontsize/2,markerscale=markerscale,frameon=False)
-    elif not legend:
+            axs.legend(fontsize= default_plot_dict['fontsize']/2, markerscale= default_plot_dict['markerscale'], frameon=False)
+                
+    elif not default_plot_dict['legend']:
         axs.get_legend().remove()
 
     return axs
@@ -108,7 +157,7 @@ def read_in_h5(inpath=None, samplename=None, modality=None, image_path=None, spe
     return adata
 
 
-def run_dimreduc_clustering(adata, ntopgenes=2000, hvg_flavor='seurat_v3', regress_var=None, resolution=0.8, nneighbors=30, npcs=40, do_normalize=True, do_scale=False, do_regress=False, do_umap=True, do_tsne=False, n_jobs=1):
+def run_dimreduc_clustering(adata=None, ntopgenes=2000, hvg_flavor='seurat_v3', regress_var=None, resolution=0.8, nneighbors=30, npcs=40, do_normalize=True, do_scale=False, do_regress=False, do_umap=True, do_tsne=False, n_jobs=1):
 
     if (hvg_flavor=='seurat_v3'):
 
@@ -591,144 +640,193 @@ def umap_density(adata=None, df=None, embedding='X_umap', t=0.2, lv=5, gsize=200
                           marker='.',
                           linewidths=0)
         
-        _= fix_plot(ax,
-                    title=s,
-                    fontsize=4,
-                    pad=2,
-                    fixlegend=True)
+        plot_dict = {'title': s, 'fontsize': 4, 'pad': 2, 'fixlegend': True}
+        _= fix_plot(ax, plot_dict=plot_dict)
 
     return fig,axs
 
 
-def plot_gex(adata, GOI=None, use_obs=False, dgex=None, groupby='leiden', use_raw=False, use_FDR=True, dendro=False, plot_type='dotplot', cmap='Reds', figsize=None, vmin=0, vmax=1, fontsize=4, size_max=None):
+def plot_gex(adata=None, GOI=None, use_obs=False, dgex=None, groupby='leiden', use_raw=False, use_FDR=True, dendro=False, plot_type='dotplot', embedding=None, dotsize=8, cmap='Reds', figsize=None, vmin=0, vmax=1, fontsize=4, size_max=None):
 
     """
-    plot type options are: dotplot, matrixplot, scanpy_heatmap, custom_heatmap
+    plot type options are: dotplot, matrixplot, scanpy_heatmap, custom_heatmap, embedding
 
     custom_heatmap returns effect_size, pval, fig, axs
     all others return fig
 
     """
 
-    if use_obs:
-        tmp = adata.copy()
+    if (plot_type == 'embedding'):
+        
+        numGenes = len(GOI)
+        ncols = 4
+        nrows = int(np.ceil(numGenes / ncols))
+        
+        if figsize is None:
+            figsize = (ncols, nrows)
+            
+        fig, axs = plt.subplots(nrows= nrows,
+                                ncols= ncols,
+                                sharex= True,
+                                sharey= True,
+                                gridspec_kw= {'hspace': 0.3, 'wspace': 0.1},
+                                figsize= figsize)
+        
+        for g, ax in zip(GOI, axs.flat):
+            
+            _= sc.pl.embedding(adata,
+                            basis= embedding,
+                            color= g,
+                            use_raw= use_raw,
+                            color_map= cmap,
+                            size= dotsize,
+                            frameon= False,
+                            add_outline= True,
+                            colorbar_loc= None,
+                            legend_fontsize= (fontsize/2),
+                            show= False,
+                            ax= ax)
+            
+            ## Make custom colorbar
+            if use_raw:
+                arr = adata[:,g].raw.X
+            else:
+                arr = adata[:,g].X
+                
+            norm = matplotlib.colors.Normalize(vmin= np.min((0, np.min(arr))), 
+                                               vmax= np.max(arr))
+            sm = matplotlib.cm.ScalarMappable(cmap= cmap, norm= norm) 
+            cax = plt.colorbar(mappable=sm, ax=ax, shrink=0.5)
+            cax.set_label(label='expression', size=(fontsize/2), labelpad=1)
+            cax.ax.tick_params(labelsize= (fontsize/2), pad=1, length=0.5, width=0.5)
+            
+            ## Update plot params
+            plot_dict = {'xlabel': f'{embedding}_1',
+                        'ylabel': f'{embedding}_2',
+                        'title': g,
+                        'fontsize': fontsize} 
+            
+            _= fix_plot(ax, plot_dict=plot_dict)
+            
+        return fig
+
     else:
-        tmp = adata[:,GOI].copy()
 
-    grp = sorted(tmp.obs[groupby].unique().tolist())
+        if use_obs:
+            tmp = adata.copy()
+        else:
+            tmp = adata[:,GOI].copy()
 
-    if dendro:
-        sc.tl.dendrogram(tmp, groupby=groupby, var_names=GOI, use_raw=use_raw, optimal_ordering=True)    
-    
-    sns.set_style("white", rc={"font.family":"Helvetica","axes.grid":False})                                                  
-    sns.set_context("paper", rc={"font.size":fontsize,"axes.titlesize":fontsize,"axes.labelsize":fontsize,"font.family":"Helvetica","xtick.labelsize":fontsize,"ytick.labelsize":fontsize})
-    
-    if figsize is None:
-        figsize = (2,2)
+        grp = sorted(tmp.obs[groupby].unique().tolist())
 
-    if (plot_type=='dotplot'):
+        if dendro:
+            sc.tl.dendrogram(tmp, groupby=groupby, var_names=GOI, use_raw=use_raw, optimal_ordering=True)    
         
-        test = sc.pl.dotplot(tmp,var_names=GOI,groupby=groupby,use_raw=use_raw,standard_scale='var',vmin=vmin,vmax=vmax,
-                             dendrogram=dendro,swap_axes=True,figsize=figsize,show=False,return_fig=True)
+        if figsize is None:
+            figsize = (2,2)
+
+        if (plot_type == 'dotplot'):
+            
+            test = sc.pl.dotplot(tmp,var_names=GOI,groupby=groupby,use_raw=use_raw,standard_scale='var',vmin=vmin,vmax=vmax,
+                                dendrogram=dendro,swap_axes=True,figsize=figsize,show=False,return_fig=True)
+            
+            test.style(color_on='square',cmap=cmap,dot_edge_color='white',
+                    dot_edge_lw=0.5,grid=True,size_exponent=3,largest_dot=1,
+                    dot_min=0,dot_max=1)
+            
+            return test
         
-        test.style(color_on='square',cmap=cmap,dot_edge_color='white',
-                   dot_edge_lw=0.5,grid=True,size_exponent=3,largest_dot=1,
-                   dot_min=0,dot_max=1)
+        elif (plot_type == 'matrixplot'):
+            
+            test = sc.pl.matrixplot(tmp,var_names=GOI,groupby=groupby,use_raw=use_raw,standard_scale='var',vmin=vmin,vmax=vmax,
+                                    dendrogram=dendro,swap_axes=True,cmap=cmap,figsize=figsize,show=False,return_fig=True)
+            
+            test.style(edge_lw=0)
+            
+            return test
         
-        return test
-    
-    elif (plot_type=='matrixplot'):
+        elif (plot_type == 'scanpy_heatmap'):
+            
+            ax = sc.pl.heatmap(tmp,var_names=GOI,groupby=groupby,use_raw=use_raw,standard_scale='var',vmin=vmin,vmax=vmax,
+                            dendrogram=dendro,cmap=cmap,swap_axes=True,show_gene_labels=True,figsize=figsize,show=False)
         
-        test = sc.pl.matrixplot(tmp,var_names=GOI,groupby=groupby,use_raw=use_raw,standard_scale='var',vmin=vmin,vmax=vmax,
-                                dendrogram=dendro,swap_axes=True,cmap=cmap,figsize=figsize,show=False,return_fig=True)
-        
-        test.style(edge_lw=0)
-        
-        return test
-    
-    elif (plot_type=='scanpy_heatmap'):
-        
-        ax = sc.pl.heatmap(tmp,var_names=GOI,groupby=groupby,use_raw=use_raw,standard_scale='var',vmin=vmin,vmax=vmax,
-                           dendrogram=dendro,cmap=cmap,swap_axes=True,show_gene_labels=True,figsize=figsize,show=False)
-    
-        return ax
+            return ax
 
-    elif (plot_type=='custom_heatmap'):
-        
-        effect_size = pd.DataFrame(index=GOI, columns=grp, dtype=np.float64)
-        pval = pd.DataFrame(index=GOI, columns=grp, dtype=np.float64)
+        elif (plot_type == 'custom_heatmap'):
+            
+            effect_size = pd.DataFrame(index=GOI, columns=grp, dtype=np.float64)
+            pval = pd.DataFrame(index=GOI, columns=grp, dtype=np.float64)
 
-        for idx in effect_size.index:
-            for col in effect_size.columns:
+            for idx in effect_size.index:
+                for col in effect_size.columns:
 
-                effect_size.loc[idx,col] = dgex.loc[(dgex['names']==idx)&(dgex['group']==int(col)),'logfoldchanges'].item()
+                    effect_size.loc[idx,col] = dgex.loc[(dgex['names']==idx)&(dgex['group']==int(col)),'logfoldchanges'].item()
 
-                if use_FDR:
-                    pval.loc[idx,col] = dgex.loc[(dgex['names']==idx)&(dgex['group']==int(col)),'pvals_adj'].item()
-                else:
-                    pval.loc[idx,col] = dgex.loc[(dgex['names']==idx)&(dgex['group']==int(col)),'pvals'].item()
+                    if use_FDR:
+                        pval.loc[idx,col] = dgex.loc[(dgex['names']==idx)&(dgex['group']==int(col)),'pvals_adj'].item()
+                    else:
+                        pval.loc[idx,col] = dgex.loc[(dgex['names']==idx)&(dgex['group']==int(col)),'pvals'].item()
 
-        pval = -1*np.log10(pval.to_numpy(dtype=np.float64))
-        pval[np.isinf(pval)] = np.max(pval[~np.isinf(pval)])
-        pval = pd.DataFrame(pval,index=GOI,columns=grp)
-        
-        d = scipy.spatial.distance.pdist(effect_size.to_numpy(dtype='float64'), metric='euclidean')
-        l = scipy.cluster.hierarchy.linkage(d, metric='euclidean', method='complete', optimal_ordering=True)
-        dn = scipy.cluster.hierarchy.dendrogram(l, no_plot=True)
-        order = dn['leaves']
-        
-        effect_size = effect_size.iloc[order,:]
-        pval = pval.iloc[order,:]
-        
-        if size_max is None:
-            size_max = np.amax(pval.to_numpy())
+            pval = -1*np.log10(pval.to_numpy(dtype=np.float64))
+            pval[np.isinf(pval)] = np.max(pval[~np.isinf(pval)])
+            pval = pd.DataFrame(pval,index=GOI,columns=grp)
+            
+            d = scipy.spatial.distance.pdist(effect_size.to_numpy(dtype='float64'), metric='euclidean')
+            l = scipy.cluster.hierarchy.linkage(d, metric='euclidean', method='complete', optimal_ordering=True)
+            dn = scipy.cluster.hierarchy.dendrogram(l, no_plot=True)
+            order = dn['leaves']
+            
+            effect_size = effect_size.iloc[order,:]
+            pval = pval.iloc[order,:]
+            
+            if size_max is None:
+                size_max = np.amax(pval.to_numpy())
 
-        ref_s = [1.30,size_max]
-        ref_l = ['0.05','maxsize: '+'{:.1e}'.format(10**(-1*size_max))]
+            ref_s = [1.30,size_max]
+            ref_l = ['0.05','maxsize: '+'{:.1e}'.format(10**(-1*size_max))]
 
 
-        fig,axs = plt.subplots(nrows=1,
-                               ncols=2,
-                               figsize=figsize)
-        
-        heatmap2(effect_size,
-                 cmap='RdBu_r',
-                 vmin=vmin,
-                 vmax=vmax,
-                 cellsize=pval,
-                 square=True,
-                 cellsize_vmax=size_max,
-                 ref_sizes=ref_s,
-                 ref_labels=ref_l,
-                 fontsize=fontsize,
-                 figsize=figsize,
-                 ax=axs[0])
+            fig,axs = plt.subplots(nrows=1,
+                                ncols=2,
+                                figsize=figsize)
+            
+            heatmap2(effect_size,
+                    cmap='RdBu_r',
+                    vmin=vmin,
+                    vmax=vmax,
+                    cellsize=pval,
+                    square=True,
+                    cellsize_vmax=size_max,
+                    ref_sizes=ref_s,
+                    ref_labels=ref_l,
+                    fontsize=fontsize,
+                    figsize=figsize,
+                    ax=axs[0])
 
-        icoord = np.array(dn['icoord'] )
-        dcoord = np.array(dn['dcoord'] )
+            icoord = np.array(dn['icoord'] )
+            dcoord = np.array(dn['dcoord'] )
 
-        for xs, ys in zip(dcoord, icoord):
-            _= axs[1].plot(xs,
-                           ys,
-                           color='k',
-                           linewidth=0.5)
+            for xs, ys in zip(dcoord, icoord):
+                _= axs[1].plot(xs,
+                            ys,
+                            color='k',
+                            linewidth=0.5)
 
-        _= fix_plot(axs[1],
-                    xticks=[],
-                    yticks=[])
+            plot_dict = {'xticks': [], 'yticks': []}
+            _= fix_plot(axs[1], plot_dict=plot_dict)
 
-        return effect_size, pval, fig, axs
+            return effect_size, pval, fig, axs
 
 
-def gex_clustermap(adata=None,GOI=None,groupby=None,use_raw=False,
+def gex_clustermap(adata=None, GOI=None, groupby=None, use_raw=False,
                    genes_on='rows',
-                   row_cluster=True,col_cluster=True,
-                   row_order=None,col_order=None,
-                   standard_scale=False,zscore=True,
+                   row_cluster=True, col_cluster=True,
+                   row_order=None, col_order=None,
+                   standard_scale=False, zscore=True,
                    dendrogram_ratio=None,
-                   cbar=True,cbar_shrink=1.0,cbar_title='',
-                   xlabel=None,ylabel=None,x_rotation=0,
-                   vmin=-3,vmax=3,figsize=None,fontsize=2):
+                   cbar=True, cbar_shrink=1.0, cbar_title='',
+                   xlabel=None, ylabel=None, x_rotation=0,
+                   vmin=-3, vmax=3, figsize=None, fontsize=2):
     
     if GOI is None:
         GOI = adata.var_names
@@ -810,3 +908,77 @@ def gex_clustermap(adata=None,GOI=None,groupby=None,use_raw=False,
     return g
 
 
+def generate_new_model(adata=None, batch_key=None, n_layers=1, max_epochs=400):
+    
+    ## Dedicated scVI model from data
+    scvi.model.SCVI.setup_anndata(adata, batch_key=batch_key)
+
+    model = scvi.model.SCVI(adata, n_layers=n_layers)
+    model.train(max_epochs=max_epochs)
+
+    latent = model.get_latent_representation()
+    adata.obsm["X_scVI"] = latent
+    
+    return adata
+
+
+def plot_cats(adata=None, groupby=None, basis='umap', sep_cats=True, dotsize=4, figsize=None, fontsize=8):
+
+    """
+    Plots categorical annotations from obs onto embedding. 
+    By default, it will make one subplot for each category, but set sep_cats to False to put them all on the same plot.
+    Returns fig
+    """
+    if sep_cats:
+
+        samples = sorted(adata.obs[groupby].unique().tolist())
+        numSamples = len(samples)
+        ncols = 4
+        nrows = int(np.ceil(numSamples/ncols))
+        
+        if figsize is None:
+            figsize = (ncols, nrows)
+
+        fig, axs = plt.subplots(ncols= ncols,
+                                nrows= nrows,
+                                sharex= True,
+                                sharey= True,
+                                gridspec_kw= {'hspace':0.1, 'wspace':0.1},
+                                figsize= figsize)
+
+        for s, ax in zip(samples, axs.flat):
+            
+            _= sc.pl.embedding(adata,
+                               basis= basis,
+                               color= groupby,
+                               groups= s,
+                               frameon= False,
+                               title= '',
+                               show= False,
+                               ax= ax)
+            
+            plot_dict = {'title': s, 'fontsize': fontsize, 'pad': 1}
+            _= fix_plot(ax, plot_dict=plot_dict)
+
+        return fig
+
+    else:
+
+        if figsize is None:
+            figsize = (2,2)
+
+        fig,axs = plt.subplots(figsize= figsize)
+
+        sc.pl.embedding(adata,
+                        basis= basis,
+                        color= groupby,
+                        frameon= False,
+                        add_outline= True,
+                        size= dotsize,
+                        legend_fontsize= fontsize,
+                        legend_fontweight= 'regular',
+                        legend_fontoutline= 0,
+                        show= False,
+                        ax= axs)
+
+        return fig

@@ -21,6 +21,8 @@ extra_seq = ['biopython',
              'pysam']
 
 extra_scseq = ['scanpy',
+               'scvi-tools',
+               'celltypist',
                'statannot']
 
 extra_dev = [*extra_seq, 
