@@ -23,7 +23,8 @@ extra_seq = ['biopython',
 extra_scseq = ['scanpy',
                'scvi-tools',
                'celltypist',
-               'statannot']
+               'statannot',
+               'pybiomart']
 
 extra_dev = [*extra_seq, 
              *extra_scseq]
