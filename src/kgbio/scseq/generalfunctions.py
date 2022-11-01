@@ -922,13 +922,13 @@ def generate_new_model(adata=None, batch_key=None, n_layers=1, max_epochs=400):
     return adata
 
 
-def plot_cats(adata=None, groupby=None, basis='umap', sep_cats=True, dotsize=4, figsize=None, fontsize=8):
-
+def plot_cats(adata=None, groupby=None, basis='umap', sep_cats=True, dotsize=4, legend_loc='on data', figsize=None, fontsize=8):
     """
     Plots categorical annotations from obs onto embedding. 
     By default, it will make one subplot for each category, but set sep_cats to False to put them all on the same plot.
     Returns fig
     """
+    
     if sep_cats:
 
         samples = sorted(adata.obs[groupby].unique().tolist())
@@ -976,6 +976,7 @@ def plot_cats(adata=None, groupby=None, basis='umap', sep_cats=True, dotsize=4, 
                         frameon= False,
                         add_outline= True,
                         size= dotsize,
+                        legend_loc= legend_loc,
                         legend_fontsize= fontsize,
                         legend_fontweight= 'regular',
                         legend_fontoutline= 0,
