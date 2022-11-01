@@ -24,7 +24,8 @@ extra_scseq = ['scanpy',
                'scvi-tools',
                'celltypist',
                'statannot',
-               'pybiomart']
+               'pybiomart',
+               'scrublet']
 
 extra_dev = [*extra_seq, 
              *extra_scseq]
