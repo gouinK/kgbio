@@ -599,10 +599,10 @@ def cmp_classifications(adata=None, sampleid=None, reference=None, comparators=N
     for comp in comparators:
 
         ref_clust = adata.obs.query(f" {sampleid} == @reference ")
-        ref_clust.index = [re.match(pattern='[ACGT]{16,18}', string=x).group() for x in ref_clust.index]
+        ref_clust.index = [re.search(pattern='[ACGT]{16,18}', string=x).group() for x in ref_clust.index]
 
         comp_clust = adata.obs.query(f" {sampleid} == @comp ")
-        comp_clust.index = [re.match(pattern='[ACGT]{16,18}', string=x).group() for x in comp_clust.index]
+        comp_clust.index = [re.search(pattern='[ACGT]{16,18}', string=x).group() for x in comp_clust.index]
 
         BC = [x for x in ref_clust.index if x in comp_clust.index]
 
