@@ -100,6 +100,8 @@ def fix_plot(axs, plot_dict=None, fontdir=None):
         _= axs.set_title(default_plot_dict['title'], fontsize= default_plot_dict['fontsize'], pad= default_plot_dict['pad']*4, weight= 'bold', fontfamily= default_plot_dict['family'])
     if 'logy' in default_plot_dict.keys():
         _= axs.set_yscale('log', base=10)
+    if 'logx' in default_plot_dict.keys():
+        _= axs.set_xscale('log', base=10)
 
     if default_plot_dict['subplot_behavior']:
         try:

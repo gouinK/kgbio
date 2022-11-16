@@ -13,15 +13,18 @@ from matplotlib.legend import Legend
 def fix_plot(axs, plot_dict=None, fontdir=None):
     
     if fontdir is not None:
-        font_files = font_manager.findSystemFonts(fontpaths=fontdir)
+        try:
+            font_files = font_manager.findSystemFonts(fontpaths=fontdir)
 
-        for font_file in font_files:
-            font_manager.fontManager.addfont(font_file)
+            for font_file in font_files:
+                font_manager.fontManager.addfont(font_file)
+        except:
+            pass
 
     ## default settings
     default_plot_dict = {
                             'weight': 'regular',
-                            'family': 'Roboto',
+                            'family': 'Helvetica',
                             'fontsize': 8,
                             'pad': 2,
                             'grid': False,
@@ -32,7 +35,9 @@ def fix_plot(axs, plot_dict=None, fontdir=None):
                             'snsfig': True,
                             'rm_legend_title': False,
                             'legend_loc': 'upper left',
-                            'markerscale': 0.2
+                            'markerscale': 0.2,
+                            'frame': True,
+                            'subplot_behavior': True
                         }
 
     ## Update settings based on input dict
@@ -45,6 +50,7 @@ def fix_plot(axs, plot_dict=None, fontdir=None):
 
     _= axs.tick_params(axis= 'both', labelsize= default_plot_dict['fontsize'], pad= default_plot_dict['pad'])
     _= axs.grid(visible= default_plot_dict['grid'])
+    _= axs.set_frame_on(default_plot_dict['frame'])
 
     if 'xlim' in default_plot_dict.keys():
         _= axs.set_xlim(default_plot_dict['xlim'])
@@ -66,6 +72,14 @@ def fix_plot(axs, plot_dict=None, fontdir=None):
         _= axs.set_title(default_plot_dict['title'], fontsize= default_plot_dict['fontsize'], pad= default_plot_dict['pad']*4, weight= 'bold', fontfamily= default_plot_dict['family'])
     if 'logy' in default_plot_dict.keys():
         _= axs.set_yscale('log', base=10)
+    if 'logx' in default_plot_dict.keys():
+        _= axs.set_xscale('log', base=10)
+
+    if default_plot_dict['subplot_behavior']:
+        try:
+            _= axs.label_outer()
+        except Exception as e:
+            pass
 
     if default_plot_dict['legend'] and default_plot_dict['fixlegend']:
             
