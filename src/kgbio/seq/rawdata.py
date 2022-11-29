@@ -43,6 +43,7 @@ def stream_fastq(fqfile):
 
 
 def readfastq(inpath):
+
     if '.gz' in inpath:
         with gzip.open(inpath, "rt") as handle:
             record_dict = SeqIO.to_dict(SeqIO.parse(handle,'fastq'))            
@@ -52,23 +53,31 @@ def readfastq(inpath):
     return record_dict
 
 
-def generate_read_df(inpath=None, fmt='new', attrs=[], cycle_idx=None):
+def generate_read_df(inpath=None, attrs=None, cycle_idx=None, suffix=None):
     
     '''
     Generates pandas dataframe from fastq with optional attributes included.
-    By default only provides run, lane, tile, and coordinates.
+    
+    By default only provides run, flowcell, lane, tile, and coordinates.
+    
     Optional attributes to include are: cycleQS, seq, QS
+    
+    If suffix is provided, the original readID will be stored as a new column
+    and a new index will be generated with the following format <readID>_<suffix>.
     '''
     
-    print('reading '+inpath, flush=True)
+    print(f"reading {inpath}")
     
+    if attrs is None:
+        attrs = []
+
     record_dict = readfastq(inpath)
     tmp = list(record_dict.keys())[0].split(':')
 
     if len(tmp) == 7:
         
         cols = ['test','run','flowcell','lane','tile','x_coord','y_coord']
-        tmp = pd.DataFrame([x.split(':') for x in record_dict],index=list(record_dict.keys()),columns=cols)
+        tmp = pd.DataFrame([x.split(':') for x in record_dict], index=list(record_dict.keys()), columns=cols)
     
     else:
         
@@ -85,5 +94,9 @@ def generate_read_df(inpath=None, fmt='new', attrs=[], cycle_idx=None):
         tmp['sequence'] = [str(record_dict[x].seq) for x in record_dict]
     if 'QS' in attrs:
         tmp['QS'] = [record_dict[x].letter_annotations["phred_quality"] for x in record_dict]
-        
+    
+    if suffix is not None:
+        tmp['readID'] = tmp.index.tolist()
+        tmp.rename(index='{}_{}'.format(suffix))
+
     return tmp
