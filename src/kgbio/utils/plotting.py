@@ -12,6 +12,27 @@ from matplotlib.legend import Legend
 ## TODO: make legend formatting better
 def fix_plot(axs, plot_dict=None, fontdir=None):
     
+    '''
+    Convenience function to change matplotlib formatting.
+    default_plot_dict = {
+                            'weight': 'regular',
+                            'family': 'Helvetica',
+                            'fontsize': 8,
+                            'pad': 2,
+                            'grid': False,
+                            'x_rotation': 0,
+                            'y_rotation': 0,
+                            'legend': True,
+                            'fixlegend': False,
+                            'snsfig': True,
+                            'rm_legend_title': False,
+                            'legend_loc': 'upper left',
+                            'markerscale': 0.2,
+                            'frame': True,
+                            'subplot_behavior': True
+                        }
+    '''
+
     if fontdir is not None:
         try:
             font_files = font_manager.findSystemFonts(fontpaths=fontdir)
