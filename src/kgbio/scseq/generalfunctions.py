@@ -645,7 +645,7 @@ def umap_density(adata=None, df=None, embedding='X_umap', t=0.2, lv=5, gsize=200
         plot_dict = {'title': s, 'fontsize': 4, 'pad': 2, 'fixlegend': True}
         _= fix_plot(ax, plot_dict=plot_dict)
 
-    return fig,axs
+    return fig, axs
 
 
 def plot_gex(adata=None, GOI=None, use_obs=False, dgex=None, groupby='leiden', use_raw=False, use_FDR=True, dendro=False, plot_type='dotplot', embedding=None, dotsize=8, cmap='Reds', figsize=None, vmin=0, vmax=1, fontsize=4, size_max=None):
@@ -654,6 +654,7 @@ def plot_gex(adata=None, GOI=None, use_obs=False, dgex=None, groupby='leiden', u
     plot type options are: dotplot, matrixplot, scanpy_heatmap, custom_heatmap, embedding
 
     custom_heatmap returns effect_size, pval, fig, axs
+    embedding returns fig, axs
     all others return fig
 
     """
@@ -677,17 +678,17 @@ def plot_gex(adata=None, GOI=None, use_obs=False, dgex=None, groupby='leiden', u
         for g, ax in zip(GOI, axs.flat):
             
             _= sc.pl.embedding(adata,
-                            basis= embedding,
-                            color= g,
-                            use_raw= use_raw,
-                            color_map= cmap,
-                            size= dotsize,
-                            frameon= False,
-                            add_outline= True,
-                            colorbar_loc= None,
-                            legend_fontsize= (fontsize/2),
-                            show= False,
-                            ax= ax)
+                                basis= embedding,
+                                color= g,
+                                use_raw= use_raw,
+                                color_map= cmap,
+                                size= dotsize,
+                                frameon= False,
+                                add_outline= True,
+                                colorbar_loc= None,
+                                legend_fontsize= (fontsize/2),
+                                show= False,
+                                ax= ax)
             
             ## Make custom colorbar
             if use_raw:
@@ -710,7 +711,7 @@ def plot_gex(adata=None, GOI=None, use_obs=False, dgex=None, groupby='leiden', u
             
             _= fix_plot(ax, plot_dict=plot_dict)
             
-        return fig
+        return fig, axs
 
     else:
 
@@ -928,7 +929,7 @@ def plot_cats(adata=None, groupby=None, basis='umap', sep_cats=True, dotsize=4, 
     """
     Plots categorical annotations from obs onto embedding. 
     By default, it will make one subplot for each category, but set sep_cats to False to put them all on the same plot.
-    Returns fig
+    Returns fig, axs
     """
     
     if sep_cats:
@@ -963,7 +964,7 @@ def plot_cats(adata=None, groupby=None, basis='umap', sep_cats=True, dotsize=4, 
             plot_dict = {'title': s, 'fontsize': fontsize, 'pad': 1}
             _= fix_plot(ax, plot_dict=plot_dict)
 
-        return fig
+        return fig, axs
 
     else:
 
@@ -985,4 +986,4 @@ def plot_cats(adata=None, groupby=None, basis='umap', sep_cats=True, dotsize=4, 
                         show= False,
                         ax= axs)
 
-        return fig
+        return fig, axs
