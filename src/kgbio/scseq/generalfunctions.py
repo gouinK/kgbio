@@ -133,7 +133,7 @@ def fix_plot(axs, plot_dict=None, fontdir=None):
     return axs
 
 
-def read_in_h5(inpath=None, samplename=None, modality=None, image_path=None, species=None, gene_annot=None):
+def read_in_h5(inpath=None, samplename=None, modality=None, image_path=None, species=None):
 
     if ('spatial' in modality):
         adata = sc.read_visium(inpath+'/outs/', count_file='filtered_feature_bc_matrix.h5', source_image_path=image_path)
