@@ -19,8 +19,7 @@ from matplotlib import pyplot as plt
 from matplotlib.legend import Legend
 import matplotlib.gridspec as gridspec
 
-from kgbio.scseq import generalfunctions as gf
-
+from kgbio.utils.plotting import fix_plot
 
 def collect_cellr_metrics(inpath=None):
 
@@ -94,7 +93,7 @@ def plot_cellR_metrics(df=None, sampleid=None, metrics=None, hues=None, dotsize=
 						   ax=ax)
 
 		plot_dict = {'ylabel': '', 'yticks': [], 'legend': False, 'fontsize': fontsize}
-		_= gf.fix_plot(ax, plot_dict=plot_dict)
+		_= fix_plot(ax, plot_dict=plot_dict)
 
 		if ax.is_first_row():
 			_= ax.set_title(h, fontsize=fontsize)
@@ -204,7 +203,7 @@ def qc_filtering(adata=None, percentile=5, mtThresh=10, scrublet=True, do_plot=F
 						 'x_rotation': 90,
 						 'fontsize': 4}
 						 
-			_= gf.fix_plot(ax, plot_dict=plot_dict)
+			_= fix_plot(ax, plot_dict=plot_dict)
 
 		plt.tight_layout()
 

@@ -19,7 +19,8 @@ from matplotlib import pyplot as plt
 from matplotlib.legend import Legend
 import matplotlib.gridspec as gridspec
 
-from kgbio.scseq import generalfunctions as gf
+from kgbio.utils.plotting import fix_plot
+from kgbio.utils.plotting import heatmap2
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -254,7 +255,7 @@ def pct_comparison(adata=None,df=None,groupby='leiden',rep=None,xcat=None,hcat=N
                          'fontsize': fontsize,
                          }
 
-            _= gf.fix_plot(ax=axs, plot_dict=plot_dict)
+            _= fix_plot(ax=axs, plot_dict=plot_dict)
             
             if tight:
                 plt.tight_layout()
@@ -342,7 +343,7 @@ def pct_comparison(adata=None,df=None,groupby='leiden',rep=None,xcat=None,hcat=N
                             'fontsize': fontsize,
                             }
 
-                _= gf.fix_plot(ax=axs, plot_dict=plot_dict)
+                _= fix_plot(ax=axs, plot_dict=plot_dict)
             
             if tight:
                 plt.tight_layout()
@@ -389,7 +390,7 @@ def pct_comparison(adata=None,df=None,groupby='leiden',rep=None,xcat=None,hcat=N
                                ncols=2,
                                figsize=figsize)
         
-        gf.heatmap2(effect_size,
+        heatmap2(effect_size,
                     cmap='RdBu_r',
                     vmin=vmin,
                     vmax=vmax,
@@ -412,7 +413,7 @@ def pct_comparison(adata=None,df=None,groupby='leiden',rep=None,xcat=None,hcat=N
                            linewidth=0.5)
 
         plot_dict = {'xticks': [], 'yticks': []}
-        _= gf.fix_plot(axs[1], plot_dict=plot_dict)
+        _= fix_plot(axs[1], plot_dict=plot_dict)
         
     elif (plot_type=='pie_chart'):
 
@@ -442,7 +443,7 @@ def pct_comparison(adata=None,df=None,groupby='leiden',rep=None,xcat=None,hcat=N
                       wedgeprops={'linewidth':0})
             
             plot_dict = {'title': x, 'fontsize': fontsize}
-            _= gf.fix_plot(ax, plot_dict=plot_dict)
+            _= fix_plot(ax, plot_dict=plot_dict)
 
     if return_df:
         return fig, axs, df
@@ -494,7 +495,7 @@ def custom_pie(adata=None, comparator=None, reference=None, groupby='leiden', la
                wedgeprops={'linewidth':0})
 
         plot_dict = {'title': label, 'fontsize': fontsize}
-        _= gf.fix_plot(ax, plot_dict=plot_dict)
+        _= fix_plot(ax, plot_dict=plot_dict)
         
     return fig,axs
 

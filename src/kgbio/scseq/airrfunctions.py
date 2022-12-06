@@ -19,7 +19,8 @@ from matplotlib.legend import Legend
 import matplotlib.gridspec as gridspec
 
 from kgbio.scseq import populationfunctions as pf
-from kgbio.scseq import generalfunctions as gf
+from kgbio.utils.plotting import fix_plot
+from kgbio.utils.plotting import heatmap2
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -217,7 +218,7 @@ def clonality_boxplot(adata=None, df=None, groupby=None, rep=None, xcat=None, hc
                     ylim = (-0.1, 1.1)
 
             plot_dict = {'ylim': ylim, 'xlabel': '', 'title': m, 'fontsize': m, 'markerscale': 0.05}
-            _= gf.fix_plot(ax, plot_dict=plot_dict)
+            _= fix_plot(ax, plot_dict=plot_dict)
                 
     else:
             
@@ -282,7 +283,7 @@ def clonality_boxplot(adata=None, df=None, groupby=None, rep=None, xcat=None, hc
                     ylim = (-0.1, 1.1)
 
             plot_dict = {'ylim': ylim, 'xlabel': '', 'title': f'{m} {s}', 'fontsize': 2, 'markerscale': 0.05}
-            _= gf.fix_plot(ax, plot_dict=plot_dict)
+            _= fix_plot(ax, plot_dict=plot_dict)
             
     plt.tight_layout()
 
@@ -623,7 +624,7 @@ def vdj_usage_heatmap(adata=None,df=None,calc_pct=True,comparator=None,reference
 
     fig,ax = plt.subplots(nrows=1,ncols=2,figsize=figsize)
     
-    gf.heatmap2(effect_size,cmap='RdBu_r',vmin=vmin,vmax=vmax,cellsize=pval,square=True,cellsize_vmax=size_max,ref_sizes=ref_s,ref_labels=ref_l,fontsize=fontsize,figsize=figsize,ax=ax[0])
+    heatmap2(effect_size,cmap='RdBu_r',vmin=vmin,vmax=vmax,cellsize=pval,square=True,cellsize_vmax=size_max,ref_sizes=ref_s,ref_labels=ref_l,fontsize=fontsize,figsize=figsize,ax=ax[0])
 
     icoord = np.array(dn['icoord'] )
     dcoord = np.array(dn['dcoord'] )

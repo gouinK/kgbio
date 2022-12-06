@@ -21,8 +21,8 @@ from matplotlib import pyplot as plt
 from matplotlib.legend import Legend
 import matplotlib.gridspec as gridspec
 
+from kgbio.utils.plotting import fix_plot
 from kgbio.scseq import generalfunctions as gf
-
 
 def leiden_dgex(adata=None, groupby='leiden', use_raw=False, method='wilcoxon', pts=True, tie_correct=True):
 
@@ -392,6 +392,6 @@ def filter_pathways(enr_results=None, significance='fdr', pval_cutoff=0.05, dire
                tick_label=df.index.tolist())
     
     plot_dict = {'yticklabels': df.index.tolist(), 'xlabel': '-log10(pval)', 'fontsize': fontsize, 'pad': 2}
-    _= gf.fix_plot(ax, plot_dict=plot_dict)
+    _= fix_plot(ax, plot_dict=plot_dict)
 
     return ax,tmp
