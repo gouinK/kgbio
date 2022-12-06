@@ -913,6 +913,10 @@ def gex_clustermap(adata=None, GOI=None, groupby=None, use_raw=False,
 
 def generate_new_model(adata=None, batch_key=None, n_layers=1, max_epochs=400):
     
+    """
+    Generates scVI model and sets latent representation in adata.obsm["X_scVI"]
+    """
+
     ## Dedicated scVI model from data
     scvi.model.SCVI.setup_anndata(adata, batch_key=batch_key)
 

@@ -499,92 +499,19 @@ def custom_pie(adata=None, comparator=None, reference=None, groupby='leiden', la
     return fig,axs
 
 
-def simplify_cell_annotation(adata=None, celldict=None, flavor=None):
+def cmp_classifications(adata=None, sampleid=None, reference=None, comparators=None, classifications=None, metrics=None, pattern=None):
 
-    if celldict is None:
+    """
+    By default, calculates mutual information, rand index, and % match for labels between two datasets.
+    Cell barcode pattern (adata.obs index) can be specified, otherwise defaults to '[ACGT]{16,18}'.
 
-        if (flavor=='singler'):
-
-            ## SingleR condensing labels
-            celldict = {'B cells':'Bcell',
-                       'CD4+ T cells':'CD4T',
-                       'CD8+ T cells':'CD8T',
-                       'Dendritic cells':'dendritic cell',
-                       'Monocytes':'monocyte',
-                       'NK cells':'NKcell',
-                       'Neutrophils':'Neutrophil',
-                        'Basophils':'Basophils',
-                       'Progenitors':'progenitors',
-                       'T cells':'Tcell'}
-
-            adata.obs['cell_type_condensed'] = [celldict[adata.obs.loc[x,'labels']] for x in adata.obs.index]
-
-            celldict2 = {'Bcell':'Bcell',
-                       'CD4T':'Tcell',
-                       'CD8T':'Tcell',
-                       'dendritic cell':'dendritic cell',
-                       'monocyte':'monocyte',
-                       'NKcell':'NKcell',
-                       'Neutrophil':'Neutrophil',
-                         'Basophils':'Basophils',
-                       'progenitors':'progenitors',
-                       'Tcell':'Tcell'}
-
-            adata.obs['cell_type_condensed_2'] = [celldict2[adata.obs.loc[x,'cell_type_condensed']] for x in adata.obs.index]
-
-        elif (flavor=='scmatch'):
-
-            ## scmatch condensing labels
-            celldict = {'CD8+ T cell':'CD8T',
-                       'Monocyte':'monocyte',
-                       'Class-switched memory B cell':'Bcell',
-                       'NK cell':'NKcell',
-                       'naive B cell':'Bcell',
-                       'CD8+ Tem':'CD8T',
-                       'CD4+ Tem':'CD4T',
-                       'CD4+ T cell':'CD4T',
-                       'CD8+ Tcm':'CD8T',
-                       'CD4+ Tcm':'CD4T',
-                       'Treg':'CD4T',
-                       'monocyte':'monocyte',
-                       'Memory B cell':'Bcell',
-                       'Megakaryocyte':'Megakaryocyte',
-                       'plasmacytoid dendritic cell':'dendritic cell',
-                       'CLP':'progenitors',
-                       'Neutrophil':'Neutrophil',
-                       'MPP':'progenitors'}
-
-            adata.obs['cell_type_condensed'] = [celldict[adata.obs.loc[x,'cell type']] for x in adata.obs.index]
-
-            celldict2 = {'CD4T':'Tcell',
-                        'CD8T':'Tcell',
-                        'NKcell':'NKcell',
-                        'monocyte':'monocyte',
-                        'Bcell':'Bcell',
-                        'CLP':'progenitors',
-                        'Megakaryocyte':'Megakaryocyte',
-                        'plasmacytoid dendritic cell':'dendritic cell',
-                        'Neutrophil':'Neutrophil',
-                        'MPP':'progenitors'}
-
-            adata.obs['cell_type_condensed_2'] = [celldict2[adata.obs.loc[x,'cell_type_condensed']] for x in adata.obs.index]
-
-        else:
-            print(f'no matching dictionaries for {flavor}')
-            return
-
-    else:
-
-        adata.obs['cell_type_condensed'] = [celldict[adata.obs.loc[x,'cell type']] for x in adata.obs.index]
-
-    return adata
-
-
-def cmp_classifications(adata=None, sampleid=None, reference=None, comparators=None, classifications=None, metrics=None):
+    """
 
     if metrics is None:
         metrics = ['AMI', 'ARI', 'pct_match']
-    
+    if pattern is None:
+        pattern='[ACGT]{16,18}'
+
     if not isinstance(comparators, list):
         comparators = [comparators]
     if not isinstance(metrics, list):
@@ -599,10 +526,10 @@ def cmp_classifications(adata=None, sampleid=None, reference=None, comparators=N
     for comp in comparators:
 
         ref_clust = adata.obs.query(f" {sampleid} == @reference ")
-        ref_clust.index = [re.search(pattern='[ACGT]{16,18}', string=x).group() for x in ref_clust.index]
+        ref_clust.index = [re.search(pattern=pattern, string=x).group() for x in ref_clust.index]
 
         comp_clust = adata.obs.query(f" {sampleid} == @comp ")
-        comp_clust.index = [re.search(pattern='[ACGT]{16,18}', string=x).group() for x in comp_clust.index]
+        comp_clust.index = [re.search(pattern=pattern, string=x).group() for x in comp_clust.index]
 
         BC = [x for x in ref_clust.index if x in comp_clust.index]
 
