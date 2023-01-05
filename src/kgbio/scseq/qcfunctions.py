@@ -235,7 +235,11 @@ def spatial_plots(adata=None, outdir=None):
     return
 
 
-def run_celltypist(adata=None, model=None, majority_voting=True):
+def run_celltypist(adata=None, model=None, majority_voting=None, mode=None, p_thres=0.5):
+
+	if (majority_voting is None) | (mode is None):
+		majority_voting = True
+		mode = 'prob match'
 
 	celltypist.models.download_models(force_update = True)
 
@@ -246,10 +250,10 @@ def run_celltypist(adata=None, model=None, majority_voting=True):
 	print(model_info.cell_types)
 
 	predictions = celltypist.annotate(filename= adata,
-									  model = model,
-									  majority_voting = majority_voting,
-									  mode = 'prob match',
-									  p_thres = 0.5)
+									  model= model,
+									  majority_voting= majority_voting,
+									  mode= mode,
+									  p_thres= p_thres)
 
 	adata2 = predictions.to_adata()
 
