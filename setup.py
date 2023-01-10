@@ -71,7 +71,7 @@ setup(
     # keywords=[
     #     # eg: 'keyword1', 'keyword2', 'keyword3',
     # ],
-    python_requires='>=3.6, <4',
+    python_requires='>=3.8, <3.11',
     install_requires=open('requirements.txt').readlines(),
     extras_require={
         'seq': extra_seq,
