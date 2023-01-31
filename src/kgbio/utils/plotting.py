@@ -1,6 +1,8 @@
 import re
 import os
 import argparse
+import pandas as pd
+import numpy as np
 import matplotlib
 import seaborn as sns
 from matplotlib import pyplot as plt
@@ -8,6 +10,11 @@ from matplotlib import rcParams
 from matplotlib import font_manager
 from matplotlib.legend import Legend
 
+from seaborn import cm
+from seaborn.axisgrid import Grid
+from seaborn.utils import (despine, axis_ticklabels_overlap, relative_luminance, to_utf8)
+from seaborn.axisgrid import Grid
+from seaborn.utils import (despine, axis_ticklabels_overlap, relative_luminance, to_utf8)
 
 ## TODO: make legend formatting better
 def fix_plot(axs, plot_dict=None, fontdir=None):

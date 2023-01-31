@@ -41,13 +41,27 @@ from kgbio.utils.plotting import heatmap2
 
 
 def read_in_h5(inpath=None, samplename=None, modality=None, image_path=None, species=None):
+    """
+    This function will read in a CellRanger output folder (looks for inpath/outs/filtered_feature_bc_matrix.h5) and return an anndata object.
+    Optional image_path can be provided if the sample is a Visium sample.
+    
+    The anndata.obs.index will be constructed from the original cell barcode (BC) as follows: f"{samplename}_{BC.split('-')[0]}"
+    A sampleID column will be added to anndata.obs and will be filled with the provided samplename.
+    
+    This will also update the anndata.var with a few QC metrics:
+        1. Sparcity of each gene (fraction of zeros)
+        2. Mitochondrial gene annotation and percent counts
+        3. Gene annotation (e.g. coding vs non-coding, GC-content, etc.)
+
+    Returns anndata
+    """
 
     if ('spatial' in modality):
-        adata = sc.read_visium(inpath+'/outs/', count_file='filtered_feature_bc_matrix.h5', source_image_path=image_path)
+        adata = sc.read_visium(f'{inpath}/outs/', count_file='filtered_feature_bc_matrix.h5', source_image_path=image_path)
     else:
-        adata = sc.read_10x_h5(inpath+'/outs/filtered_feature_bc_matrix.h5')
+        adata = sc.read_10x_h5(f'{inpath}/outs/filtered_feature_bc_matrix.h5')
 
-    adata.obs.index = [samplename+'_'+x.split('-')[0] for x in adata.obs.index]
+    adata.obs.index = [f"{samplename}_{x.split('-')[0]}" for x in adata.obs.index]
     adata.obs['sampleID'] = samplename
 
     adata.var_names_make_unique()
@@ -67,7 +81,20 @@ def read_in_h5(inpath=None, samplename=None, modality=None, image_path=None, spe
 
 
 def run_dimreduc_clustering(adata=None, ntopgenes=2000, hvg_flavor='seurat_v3', regress_var=None, resolution=0.8, nneighbors=30, npcs=40, do_normalize=True, do_scale=False, do_regress=False, do_umap=True, do_tsne=False, n_jobs=1):
+    """
+    This function performs the following steps:
+        1. HVG detection, controlled by ntopgenes and hvg_flavor parameters
+        2. Count normalization (optional)
+        3. Count regression (optional)
+        4. Count scaling (optional)
+        5. PCA, controlled by npcs parameter
+        6. Nearest neighbor detection on PCA, controlled by nneighbors parameter
+        7. tsne/umap (optional) (tsne can be run with multiple cores)
+        8. Leiden clustering, controlled by resolution parameter
 
+    Returns updated anndata
+    """
+    
     if (hvg_flavor=='seurat_v3'):
 
         sc.pp.highly_variable_genes(adata, n_top_genes=ntopgenes, flavor=hvg_flavor, subset=False, inplace=True)
@@ -108,7 +135,14 @@ def run_dimreduc_clustering(adata=None, ntopgenes=2000, hvg_flavor='seurat_v3', 
 
 
 def umap_density(adata=None, df=None, embedding='X_umap', t=0.2, lv=5, gsize=200, alpha=0.4, colors=None, groupby=None, hue=None, fill=True, include_scatter=True, dotsize=0.005, figsize=None):
+    """
+    kdeplot of density of cells from each category in the groupby parameter overlaid on provided embedding
 
+    Either an anndata can be provided, or a dataframe containing the embedding (emb1, emb2) columns and groupby columns and be provided directly.
+
+    Returns fig, axs
+    """
+    
     if adata is not None:
         df = pd.DataFrame(adata.obsm[embedding], columns=['emb1','emb2'], index=adata.obs.index)
         df = df.merge(adata.obs, left_index=True, right_index=True)
@@ -174,7 +208,14 @@ def umap_density(adata=None, df=None, embedding='X_umap', t=0.2, lv=5, gsize=200
 def plot_gex(adata=None, GOI=None, use_obs=False, dgex=None, groupby='leiden', use_raw=False, use_FDR=True, dendro=False, plot_type='dotplot', embedding=None, dotsize=8, cmap='Reds', figsize=None, vmin=0, vmax=1, fontsize=4, size_max=None):
 
     """
-    plot type options are: dotplot, matrixplot, scanpy_heatmap, custom_heatmap, embedding
+    Plotting expression of genes specified in GOI [list] as a function of groupby parameter.
+    By default, the genes and expression values will be taken from adata.var and adata.X.
+    However, if use_obs is set to true, then it is assumed that the variables requested are 
+    in the obs columns and the expression values will be taken from the obs values.
+    
+    Plot type options are: dotplot, matrixplot, scanpy_heatmap, custom_heatmap, embedding
+    custom_heatmap requires a dgex dataframe (result from sc.tl.rank_genes_groups) 
+    and creates a heatmap showing dgex results for the requested genes
 
     custom_heatmap returns effect_size, pval, fig, axs
     embedding returns fig, axs
@@ -351,9 +392,19 @@ def gex_clustermap(adata=None, GOI=None, groupby=None, use_raw=False,
                    standard_scale=False, zscore=True,
                    dendrogram_ratio=None,
                    cbar=True, cbar_shrink=1.0, cbar_title='',
-                   xlabel=None, ylabel=None, x_rotation=0,
+                   xlabel=None, ylabel=None, 
+                   x_rotation=0, y_rotation=0,
+                   xtick_fontsize=2, ytick_fontsize=2,
                    vmin=-3, vmax=3, figsize=None, fontsize=2):
     
+    """
+    Clustered heatmap for gene expression, with genes requested in GOI [list] on the
+    genes_on axis and groupby categories on the opposite axis. Expression values represent
+    the mean expression in each category.
+
+    Returns fig
+    """
+
     if GOI is None:
         GOI = adata.var_names
     if figsize is None:
@@ -361,7 +412,7 @@ def gex_clustermap(adata=None, GOI=None, groupby=None, use_raw=False,
     if dendrogram_ratio is None:
         dendrogram_ratio = (0.3,0.05)
     if xlabel is None:
-        xlabel = groupby
+        xlabel = ''
     if ylabel is None:
         ylabel = ''
     
@@ -419,8 +470,8 @@ def gex_clustermap(adata=None, GOI=None, groupby=None, use_raw=False,
     
     g.ax_heatmap.set_yticks(np.arange(df.shape[0])+0.5)
     g.ax_heatmap.set_xticks(np.arange(df.shape[1])+0.5)
-    g.ax_heatmap.set_yticklabels(g.ax_heatmap.get_yticklabels(), fontsize=fontsize)
-    g.ax_heatmap.set_xticklabels(g.ax_heatmap.get_xticklabels(), fontsize=fontsize/2, rotation=x_rotation)
+    g.ax_heatmap.set_yticklabels(g.ax_heatmap.get_yticklabels(), fontsize=ytick_fontsize, rotation=y_rotation)
+    g.ax_heatmap.set_xticklabels(g.ax_heatmap.get_xticklabels(), fontsize=xtick_fontsize, rotation=x_rotation)
     g.ax_heatmap.set_xlabel(xlabel, fontsize=fontsize)
     g.ax_heatmap.set_ylabel(ylabel, fontsize=fontsize)
     g.ax_heatmap.tick_params(axis='both', length=1, width=0.5)
@@ -438,6 +489,8 @@ def generate_new_model(adata=None, batch_key=None, n_layers=1, max_epochs=400):
     
     """
     Generates scVI model and sets latent representation in adata.obsm["X_scVI"]
+    
+    Returns updated adata
     """
 
     ## Dedicated scVI model from data
@@ -456,6 +509,7 @@ def plot_cats(adata=None, groupby=None, basis='umap', sep_cats=True, dotsize=4, 
     """
     Plots categorical annotations from obs onto embedding. 
     By default, it will make one subplot for each category, but set sep_cats to False to put them all on the same plot.
+    
     Returns fig, axs
     """
     

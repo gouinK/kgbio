@@ -85,9 +85,22 @@ Installation
 Documentation
 =============
 
+The utils module contains plotting helper functions.
+The seq module contains functions related to fastq processing.
+The scseq module contains functions related to single-cell-sequencing processing.
+
+utils 
+    -> plotting.py
+seq
+    -> rawdata.py
+scseq
+    -> generalfunctions.py
+    -> qcfunctions.py
+    -> dgexfunctions.py
+    -> populationfunctions.py (work in progress, no guarantees)
+    -> airrfunctions.py (work in progress, no guarantees)
 
 Not currently active: https://kgbio.readthedocs.io/
-
 
 Development
 ===========

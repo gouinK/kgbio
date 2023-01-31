@@ -22,7 +22,15 @@ import matplotlib.gridspec as gridspec
 from kgbio.utils.plotting import fix_plot
 
 def collect_cellr_metrics(inpath=None):
+	"""
+	Constructs dataframe of cellranger metrics from a directory containing
+	one or more cellranger output folders.
 
+	The expected file structure is: {inpath}/{sample_x}/outs/metrics_summary.csv
+
+	Returns dataframe
+	"""
+	
 	if inpath is None:
 		print('error no path')
 		return
@@ -52,6 +60,11 @@ def collect_cellr_metrics(inpath=None):
 
 
 def plot_cellR_metrics(df=None, sampleid=None, metrics=None, hues=None, dotsize=4, fontsize=4, markerscale=0.1):
+	"""
+	Makes scatterplots of cellranger metrics contained in a dataframe.
+
+	Returns fig, axs
+	"""
 
 	if metrics is None:
 		metrics = ['Estimated_Number_of_Cells', 'Sequencing_Saturation', 'Median_Genes_per_Cell', 'Total_Genes_Detected', 'Median_UMI_Counts_per_Cell']
@@ -108,7 +121,12 @@ def plot_cellR_metrics(df=None, sampleid=None, metrics=None, hues=None, dotsize=
 
 
 def calc_sparcity(adata=None):
+	"""
+	Calculates sparcity of each gene (fraction of zeros).
 
+	Returns array
+	"""
+	
 	nnz = adata.X.count_nonzero()
 	total = adata.X.shape[0] * adata.X.shape[1]
 	sparcity = (1-(nnz/total))*100
@@ -117,46 +135,66 @@ def calc_sparcity(adata=None):
 
 
 def annotate_genes(adata=None, remove_noncoding=False, species=None):
+	"""
+	Annotates genes using biomart.
+	Included annotations are: 
+		attrs = [
+				"ensembl_gene_id", "hgnc_symbol", 
+				"start_position", "end_position", 
+				"chromosome_name", "percentage_gene_gc_content",
+				"gene_biotype"
+			]
+	Can optionally remove non-coding genes from anndata.
 
-    print(f'original adata shape: {adata.shape}')
+	Returns anndata with updated var
+	"""
 
-    if "ENS" in adata.var_names[0]:
-        gene_name_type = "ensembl_gene_id"
-    else:
-        gene_name_type = "hgnc_symbol"
+	print(f'original adata shape: {adata.shape}')
 
-    attrs = [
-             "ensembl_gene_id", "hgnc_symbol", 
-             "start_position", "end_position", 
-             "chromosome_name", "percentage_gene_gc_content",
-             "gene_biotype"
-            ]
+	if "ENS" in adata.var_names[0]:
+		gene_name_type = "ensembl_gene_id"
+	else:
+		gene_name_type = "hgnc_symbol"
 
-    annot = sc.queries.biomart_annotations(org=species, attrs=attrs)
-    annot.dropna(how='any', subset=[gene_name_type], inplace=True)
-    annot.drop_duplicates(subset=[gene_name_type], keep='first', inplace=True)
-    annot = annot.loc[~annot['chromosome_name'].str.contains("CHR"),:]
-    annot['gene_length'] = annot['end_position'] - annot['start_position']
-    annot.set_index(gene_name_type,inplace=True)
+	attrs = [
+				"ensembl_gene_id", "hgnc_symbol", 
+				"start_position", "end_position", 
+				"chromosome_name", "percentage_gene_gc_content",
+				"gene_biotype"
+			]
 
-    adata.var = adata.var.merge(annot,how='left',left_index=True,right_index=True)
+	annot = sc.queries.biomart_annotations(org=species, attrs=attrs)
+	annot.dropna(how='any', subset=[gene_name_type], inplace=True)
+	annot.drop_duplicates(subset=[gene_name_type], keep='first', inplace=True)
+	annot = annot.loc[~annot['chromosome_name'].str.contains("CHR"),:]
+	annot['gene_length'] = annot['end_position'] - annot['start_position']
+	annot.set_index(gene_name_type,inplace=True)
 
-    keepTypes = [
-                 'protein_coding',
-                 'IG_V_gene', 'IG_D_gene', 'IG_C_gene', 'IG_J_gene',
-                 'TR_V_gene', 'TR_J_gene', 'TR_C_gene' 'TR_D_gene'
-                ]
+	adata.var = adata.var.merge(annot,how='left',left_index=True,right_index=True)
 
-    if remove_noncoding:
-        adata = adata[:, adata.var.query(" gene_biotype in @keepTypes ").index].copy()
+	keepTypes = [
+					'protein_coding',
+					'IG_V_gene', 'IG_D_gene', 'IG_C_gene', 'IG_J_gene',
+					'TR_V_gene', 'TR_J_gene', 'TR_C_gene' 'TR_D_gene'
+				]
 
-    print(f'final adata shape: {adata.shape}')
+	if remove_noncoding:
+		adata = adata[:, adata.var.query(" gene_biotype in @keepTypes ").index].copy()
 
-    return adata
+	print(f'final adata shape: {adata.shape}')
+
+	return adata
 
 
 def qc_filtering(adata=None, percentile=5, mtThresh=10, scrublet=True, do_plot=False, strip_plot=False, do_filter=True):
-    
+	"""
+	Performs filtering of cells based on percentile of total counts, number of unique genes, and mitochondrial percentage.
+	Also optionally performs scrublet filtering.
+	Also optionally provides violin plots of 'n_genes_by_counts', 'total_counts', 'pct_counts_mt' on dataset prior to filtering.
+	
+	Returns anndata with filtered cells removed.
+	"""
+	
 	if scrublet:
 		doublet_rate = 0.07
 		sc.external.pp.scrublet(adata, expected_doublet_rate=doublet_rate)
@@ -198,11 +236,11 @@ def qc_filtering(adata=None, percentile=5, mtThresh=10, scrublet=True, do_plot=F
 									ax=ax)
 			
 			plot_dict = {'ylim': (0, ylim),
-						 'yticks': np.arange(start=0, stop=ylim, step=step),
-						 'xticklabels': adata.obs.sampleID.unique().tolist(),
-						 'x_rotation': 90,
-						 'fontsize': 4}
-						 
+							'yticks': np.arange(start=0, stop=ylim, step=step),
+							'xticklabels': adata.obs.sampleID.unique().tolist(),
+							'x_rotation': 90,
+							'fontsize': 4}
+							
 			_= fix_plot(ax, plot_dict=plot_dict)
 
 		plt.tight_layout()
@@ -217,8 +255,11 @@ def qc_filtering(adata=None, percentile=5, mtThresh=10, scrublet=True, do_plot=F
 
 
 def spatial_plots(adata=None, outdir=None):
+	"""
+	Generates QC plots ('total_counts', 'n_genes_by_counts', 'pct_counts_mt') on Visium image.
+	"""
     
-    sc.pl.spatial(adata,
+	sc.pl.spatial(adata,
                   img_key='hires',
                   color=['total_counts', 'n_genes_by_counts', 'pct_counts_mt'],
                   vmin=0,
@@ -226,17 +267,22 @@ def spatial_plots(adata=None, outdir=None):
                   ncols=3,
                   cmap='inferno')
     
-    plt.savefig(outdir+'/spatial_QC_metrics.png', dpi=600, bbox_inches='tight')
-    
-    sc.pl.spatial(adata, img_key='hires', color=['leiden'])
-    
-    plt.savefig(outdir+'/spatial_leiden.png', dpi=600, bbox_inches='tight')
-    
-    return
+	plt.savefig(outdir+'/spatial_QC_metrics.png', dpi=600, bbox_inches='tight')
+
+	sc.pl.spatial(adata, img_key='hires', color=['leiden'])
+
+	plt.savefig(outdir+'/spatial_leiden.png', dpi=600, bbox_inches='tight')
+
+	return
 
 
 def run_celltypist(adata=None, model=None, majority_voting=None, mode=None, p_thres=0.5):
-
+	"""
+	Performs celltypist automated cell type identification.
+	
+	Returns adata with cell type labels in obs.
+	"""
+	
 	if (majority_voting is None) | (mode is None):
 		majority_voting = True
 		mode = 'prob match'
