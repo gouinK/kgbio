@@ -47,9 +47,9 @@ Overview
     :alt: Supported implementations
     :target: https://pypi.org/project/kgbio
 
-.. |commits-since| image:: https://img.shields.io/github/commits-since/gouink/kgbio/v0.0.1.svg
+.. |commits-since| image:: https://img.shields.io/github/commits-since/gouink/kgbio/v0.0.2.svg
     :alt: Commits since latest release
-    :target: https://github.com/gouink/kgbio/compare/v0.0.1...main
+    :target: https://github.com/gouink/kgbio/compare/v0.0.2...main
 
 
 
@@ -93,7 +93,7 @@ The scseq module contains functions related to single-cell-sequencing processing
 
 utils 
     -> plotting.py
-    
+
 seq
     -> rawdata.py
 

@@ -33,7 +33,7 @@ extra_dev = [*extra_seq,
 
 setup(
     name='kgbio',
-    version='0.0.1',
+    version='0.0.2',
     license='MIT',
     description='My one-stop-shop for bioinformatics utilities that I have written over the years.',
     long_description='{}\n{}'.format(
