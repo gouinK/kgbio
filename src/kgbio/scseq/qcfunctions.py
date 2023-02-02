@@ -145,6 +145,8 @@ def annotate_genes(adata=None, remove_noncoding=False, species=None):
 				"gene_biotype"
 			]
 	Can optionally remove non-coding genes from anndata.
+	
+	Species should be: “hsapiens”, “mmusculus”, “drerio”, etc
 
 	Returns anndata with updated var
 	"""
@@ -170,7 +172,7 @@ def annotate_genes(adata=None, remove_noncoding=False, species=None):
 	annot['gene_length'] = annot['end_position'] - annot['start_position']
 	annot.set_index(gene_name_type,inplace=True)
 
-	adata.var = adata.var.merge(annot,how='left',left_index=True,right_index=True)
+	adata.var = adata.var.merge(annot, how='left', left_index=True, right_index=True)
 
 	keepTypes = [
 					'protein_coding',
@@ -203,9 +205,9 @@ def qc_filtering(adata=None, percentile=5, mtThresh=10, scrublet=True, do_plot=F
 	geneThresh = np.percentile(adata.obs.n_genes_by_counts, q=percentile)
 	umiThresh = np.percentile(adata.obs.total_counts, q=percentile)
 
-	print(f'Unique gene count threshold = {geneThresh}')
-	print(f'UMI count threshold = {umiThresh}')
-	print(f'Mitochondrial percent threshold = {mtThresh}%')
+	print(f"Unique gene count threshold = {geneThresh:.0f}")
+	print(f"UMI count threshold = {umiThresh:.0f}")
+	print(f"Mitochondrial percent threshold = {mtThresh:.0f}%")
 
 	if do_plot:
 
@@ -213,33 +215,35 @@ def qc_filtering(adata=None, percentile=5, mtThresh=10, scrublet=True, do_plot=F
 		ylims = [5000, 10000, 100]
 		steps = [200, 500, 10]
 
-		fig,axs = plt.subplots(nrows=3,
-								ncols=1,
-								sharex=True,
-								sharey=False,
-								figsize=(4,3))
+		fig,axs = plt.subplots(nrows= 3,
+							   ncols= 1,
+							   sharex= True,
+							   sharey= False,
+							   figsize= (4,3))
 
 		for metric, ylim, step, ax in zip(metrics, ylims, steps, axs.flat):
 
-			_= sns.violinplot(y=metric,
-								x='sampleID',
-								data=adata.obs,
-								inner='quartile',
-								ax=ax)
+			_= sns.violinplot(y= metric,
+							  x= 'sampleID',
+							  data= adata.obs,
+							  inner= 'quartile',
+							  ax= ax)
 			
 			if strip_plot:
-				_= sns.stripplot(y=metric,
-									x='sampleID',
-									data=adata.obs,
-									size=0.1,
-									color='k',
-									ax=ax)
+				_= sns.stripplot(y= metric,
+								 x= 'sampleID',
+								 data= adata.obs,
+								 size= 0.1,
+								 color= 'k',
+								 ax= ax)
 			
-			plot_dict = {'ylim': (0, ylim),
+			plot_dict = {
+							'ylim': (0, ylim),
 							'yticks': np.arange(start=0, stop=ylim, step=step),
 							'xticklabels': adata.obs.sampleID.unique().tolist(),
 							'x_rotation': 90,
-							'fontsize': 4}
+							'fontsize': 4
+						}
 							
 			_= fix_plot(ax, plot_dict=plot_dict)
 
@@ -260,12 +264,12 @@ def spatial_plots(adata=None, outdir=None):
 	"""
     
 	sc.pl.spatial(adata,
-                  img_key='hires',
-                  color=['total_counts', 'n_genes_by_counts', 'pct_counts_mt'],
-                  vmin=0,
-                  vmax='p99',
-                  ncols=3,
-                  cmap='inferno')
+                  img_key= 'hires',
+                  color= ['total_counts', 'n_genes_by_counts', 'pct_counts_mt'],
+                  vmin= 0,
+                  vmax= 'p99',
+                  ncols= 3,
+                  cmap= 'inferno')
     
 	plt.savefig(outdir+'/spatial_QC_metrics.png', dpi=600, bbox_inches='tight')
 
@@ -279,7 +283,7 @@ def spatial_plots(adata=None, outdir=None):
 def run_celltypist(adata=None, model=None, majority_voting=None, mode=None, p_thres=0.5):
 	"""
 	Performs celltypist automated cell type identification.
-	
+	By default, will run majority voting with prob match mode.
 	Returns adata with cell type labels in obs.
 	"""
 	

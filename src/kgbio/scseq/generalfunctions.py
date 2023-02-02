@@ -53,6 +53,8 @@ def read_in_h5(inpath=None, samplename=None, modality=None, image_path=None, spe
         2. Mitochondrial gene annotation and percent counts
         3. Gene annotation (e.g. coding vs non-coding, GC-content, etc.)
 
+    Species parameter must be recognized by biomart.
+
     Returns anndata
     """
 
@@ -70,11 +72,14 @@ def read_in_h5(inpath=None, samplename=None, modality=None, image_path=None, spe
 
     if species=='hsapiens':
         adata.var['mt'] = adata.var_names.str.startswith('MT-')
-    else:
+        sc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], inplace=True)
+    elif species=='mmusculus':
         adata.var['mt'] = adata.var_names.str.startswith('mt-')
-
-    sc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], inplace=True)
-
+        sc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], inplace=True)
+    else:
+        print("Not adding mitochondrial annotation.")
+        sc.pp.calculate_qc_metrics(adata, inplace=True)
+    
     adata = qc.annotate_genes(adata, remove_noncoding=False, species=species)
 
     return adata
@@ -97,11 +102,18 @@ def run_dimreduc_clustering(adata=None, ntopgenes=2000, hvg_flavor='seurat_v3', 
     
     if (hvg_flavor=='seurat_v3'):
 
-        sc.pp.highly_variable_genes(adata, n_top_genes=ntopgenes, flavor=hvg_flavor, subset=False, inplace=True)
-
-        if do_normalize:
-            sc.pp.normalize_total(adata, target_sum=1e4)
-            sc.pp.log1p(adata)
+        try:
+            sc.pp.highly_variable_genes(adata, n_top_genes=ntopgenes, flavor=hvg_flavor, subset=False, inplace=True)
+            
+            if do_normalize:
+                sc.pp.normalize_total(adata, target_sum=1e4)
+                sc.pp.log1p(adata)
+        except:
+            print("Requested hvg method failed, reverting to default method.")
+            if do_normalize:
+                sc.pp.normalize_total(adata, target_sum=1e4)
+                sc.pp.log1p(adata)
+            sc.pp.highly_variable_genes(adata, subset=False, inplace=True)
 
     else:
 
@@ -109,15 +121,17 @@ def run_dimreduc_clustering(adata=None, ntopgenes=2000, hvg_flavor='seurat_v3', 
             sc.pp.normalize_total(adata, target_sum=1e4)
             sc.pp.log1p(adata)
 
-        sc.pp.highly_variable_genes(adata, n_top_genes=ntopgenes, flavor=hvg_flavor, subset=False, inplace=True)
-
+        try:
+            sc.pp.highly_variable_genes(adata, n_top_genes=ntopgenes, flavor=hvg_flavor, subset=False, inplace=True)
+        except:
+            print("Requested hvg method failed, reverting to default method.")
+            sc.pp.highly_variable_genes(adata, subset=False, inplace=True)
 
     if do_regress:
         sc.pp.regress_out(adata, keys=regress_var, n_jobs=n_jobs)
 
     if do_scale:
         sc.pp.scale(adata, max_value=10)
-
 
     sc.tl.pca(adata, use_highly_variable=True)
 
@@ -126,7 +140,7 @@ def run_dimreduc_clustering(adata=None, ntopgenes=2000, hvg_flavor='seurat_v3', 
     if do_umap:
         sc.tl.umap(adata)
     if do_tsne:
-        sc.tl.tsne(adata, n_pcs=npcs, njobs=n_jobs)
+        sc.tl.tsne(adata, n_pcs=npcs, n_jobs=n_jobs)
 
     sc.tl.leiden(adata, resolution=resolution)
     
@@ -164,27 +178,27 @@ def umap_density(adata=None, df=None, embedding='X_umap', t=0.2, lv=5, gsize=200
     if figsize is None:
         figsize = (len(st)*2,2)
         
-    fig,axs = plt.subplots(nrows=1,
-                           ncols=len(st),
-                           sharex=True,
-                           sharey=True,
-                           figsize=figsize)
+    fig,axs = plt.subplots(nrows= 1,
+                           ncols= len(st),
+                           sharex= True,
+                           sharey= True,
+                           figsize= figsize)
 
     for s,ax in zip(st,axs.flat):
         
         tmp = df.loc[(df[groupby]==s),:]
         
-        _= sns.kdeplot(x='emb1',
-                       y='emb2',
-                       data=tmp,
-                       hue=hue,
-                       fill=fill,
-                       palette=colors,
-                       thresh=t,
-                       alpha=alpha,
-                       levels=lv,
-                       gridsize=gsize,
-                       ax=ax)
+        _= sns.kdeplot(x= 'emb1',
+                       y= 'emb2',
+                       data= tmp,
+                       hue= hue,
+                       fill= fill,
+                       palette= colors,
+                       thresh= t,
+                       alpha= alpha,
+                       levels= lv,
+                       gridsize= gsize,
+                       ax= ax)
 
         # if hue is None:
         #     _= sns.kdeplot(x='emb1',y='emb2',data=tmp,fill=fill,color=colors[s],thresh=t,alpha=alpha,levels=lv,gridsize=gsize,ax=ax,legend=False)
@@ -192,12 +206,12 @@ def umap_density(adata=None, df=None, embedding='X_umap', t=0.2, lv=5, gsize=200
         #     _= sns.kdeplot(x='emb1',y='emb2',data=tmp,hue=hue,fill=fill,palette=colors,thresh=t,alpha=alpha,levels=lv,gridsize=gsize,ax=ax,legend=True)
 
         if include_scatter:
-            _= ax.scatter(x=df['emb1'],
-                          y=df['emb2'],
-                          c='tab:gray',
-                          s=dotsize,
-                          marker='.',
-                          linewidths=0)
+            _= ax.scatter(x= df['emb1'],
+                          y= df['emb2'],
+                          c= 'tab:gray',
+                          s= dotsize,
+                          marker= '.',
+                          linewidths= 0)
         
         plot_dict = {'title': s, 'fontsize': 4, 'pad': 2, 'fixlegend': True}
         _= fix_plot(ax, plot_dict=plot_dict)
@@ -269,9 +283,9 @@ def plot_gex(adata=None, GOI=None, use_obs=False, dgex=None, groupby='leiden', u
             
             ## Update plot params
             plot_dict = {'xlabel': f'{embedding}_1',
-                        'ylabel': f'{embedding}_2',
-                        'title': g,
-                        'fontsize': fontsize} 
+                         'ylabel': f'{embedding}_2',
+                         'title': g,
+                         'fontsize': fontsize} 
             
             _= fix_plot(ax, plot_dict=plot_dict)
             
@@ -287,26 +301,57 @@ def plot_gex(adata=None, GOI=None, use_obs=False, dgex=None, groupby='leiden', u
         grp = sorted(tmp.obs[groupby].unique().tolist())
 
         if dendro:
-            sc.tl.dendrogram(tmp, groupby=groupby, var_names=GOI, use_raw=use_raw, optimal_ordering=True)    
+            sc.tl.dendrogram(tmp, 
+                             groupby=groupby, 
+                             var_names=GOI, 
+                             use_raw=use_raw, 
+                             optimal_ordering=True)    
         
         if figsize is None:
             figsize = (2,2)
 
         if (plot_type == 'dotplot'):
             
-            test = sc.pl.dotplot(tmp,var_names=GOI,groupby=groupby,use_raw=use_raw,standard_scale='var',vmin=vmin,vmax=vmax,
-                                dendrogram=dendro,swap_axes=True,figsize=figsize,show=False,return_fig=True)
+            test = sc.pl.dotplot(tmp,
+                                 var_names= GOI,
+                                 groupby= groupby,
+                                 use_raw= use_raw,
+                                 standard_scale= 'var',
+                                 vmin= vmin,
+                                 vmax= vmax,
+                                 dendrogram= dendro,
+                                 swap_axes= True,
+                                 figsize= figsize,
+                                 show= False,
+                                 return_fig= True)
             
-            test.style(color_on='square',cmap=cmap,dot_edge_color='white',
-                    dot_edge_lw=0.5,grid=True,size_exponent=3,largest_dot=1,
-                    dot_min=0,dot_max=1)
+            test.style(color_on= 'square',
+                       cmap= cmap,
+                       dot_edge_color= 'white',
+                       dot_edge_lw= 0.5,
+                       grid= True,
+                       size_exponent= 3,
+                       largest_dot= 1,
+                       dot_min= 0,
+                       dot_max= 1)
             
             return test
         
         elif (plot_type == 'matrixplot'):
             
-            test = sc.pl.matrixplot(tmp,var_names=GOI,groupby=groupby,use_raw=use_raw,standard_scale='var',vmin=vmin,vmax=vmax,
-                                    dendrogram=dendro,swap_axes=True,cmap=cmap,figsize=figsize,show=False,return_fig=True)
+            test = sc.pl.matrixplot(tmp,
+                                    var_names= GOI,
+                                    groupby= groupby,
+                                    use_raw= use_raw,
+                                    standard_scale= 'var',
+                                    vmin= vmin,
+                                    vmax= vmax,
+                                    dendrogram= dendro,
+                                    swap_axes= True,
+                                    cmap= cmap,
+                                    figsize= figsize,
+                                    show= False,
+                                    return_fig= True)
             
             test.style(edge_lw=0)
             
@@ -314,8 +359,19 @@ def plot_gex(adata=None, GOI=None, use_obs=False, dgex=None, groupby='leiden', u
         
         elif (plot_type == 'scanpy_heatmap'):
             
-            ax = sc.pl.heatmap(tmp,var_names=GOI,groupby=groupby,use_raw=use_raw,standard_scale='var',vmin=vmin,vmax=vmax,
-                            dendrogram=dendro,cmap=cmap,swap_axes=True,show_gene_labels=True,figsize=figsize,show=False)
+            ax = sc.pl.heatmap(tmp,
+                               var_names= GOI,
+                               groupby= groupby,
+                               use_raw= use_raw,
+                               standard_scale= 'var',
+                               vmin= vmin,
+                               vmax= vmax,
+                               dendrogram= dendro,
+                               cmap= cmap,
+                               swap_axes= True,
+                               show_gene_labels= True,
+                               figsize= figsize,
+                               show= False)
         
             return ax
 
@@ -350,34 +406,35 @@ def plot_gex(adata=None, GOI=None, use_obs=False, dgex=None, groupby='leiden', u
                 size_max = np.amax(pval.to_numpy())
 
             ref_s = [1.30,size_max]
-            ref_l = ['0.05','maxsize: '+'{:.1e}'.format(10**(-1*size_max))]
+            ref_l = ['0.05', f"maxsize: {10**(-1*size_max):.1e}"]
 
 
-            fig,axs = plt.subplots(nrows=1,
-                                ncols=2,
-                                figsize=figsize)
+            fig,axs = plt.subplots(nrows= 1,
+                                   ncols= 2,
+                                   figsize= figsize)
             
             heatmap2(effect_size,
-                    cmap='RdBu_r',
-                    vmin=vmin,
-                    vmax=vmax,
-                    cellsize=pval,
-                    square=True,
-                    cellsize_vmax=size_max,
-                    ref_sizes=ref_s,
-                    ref_labels=ref_l,
-                    fontsize=fontsize,
-                    figsize=figsize,
-                    ax=axs[0])
+                     cmap= 'RdBu_r',
+                     vmin= vmin,
+                     vmax= vmax,
+                     cellsize= pval,
+                     square= True,
+                     cellsize_vmax= size_max,
+                     ref_sizes= ref_s,
+                     ref_labels= ref_l,
+                     fontsize= fontsize,
+                     figsize= figsize,
+                     ax= axs[0])
 
             icoord = np.array(dn['icoord'] )
             dcoord = np.array(dn['dcoord'] )
 
             for xs, ys in zip(dcoord, icoord):
+
                 _= axs[1].plot(xs,
-                            ys,
-                            color='k',
-                            linewidth=0.5)
+                               ys,
+                               color='k',
+                               linewidth=0.5)
 
             plot_dict = {'xticks': [], 'yticks': []}
             _= fix_plot(axs[1], plot_dict=plot_dict)
@@ -386,7 +443,9 @@ def plot_gex(adata=None, GOI=None, use_obs=False, dgex=None, groupby='leiden', u
 
 
 def gex_clustermap(adata=None, GOI=None, groupby=None, use_raw=False,
+                   agg_function='mean',
                    genes_on='rows',
+                   cluster_method='complete',
                    row_cluster=True, col_cluster=True,
                    row_order=None, col_order=None,
                    standard_scale=False, zscore=True,
@@ -400,7 +459,7 @@ def gex_clustermap(adata=None, GOI=None, groupby=None, use_raw=False,
     """
     Clustered heatmap for gene expression, with genes requested in GOI [list] on the
     genes_on axis and groupby categories on the opposite axis. Expression values represent
-    the mean expression in each category.
+    the expression in each category using agg_function (mean, median, min, or max).
 
     Returns fig
     """
@@ -421,9 +480,20 @@ def gex_clustermap(adata=None, GOI=None, groupby=None, use_raw=False,
     else:
         df = pd.DataFrame(adata[:,GOI].X.toarray(),index=adata.obs.index,columns=GOI)
         
-    df = df.merge(adata.obs,how='left',left_index=True,right_index=True)
-    df = df.groupby(groupby).mean()[GOI]
-    
+    df = df.merge(adata.obs, how='left', left_index=True, right_index=True)
+
+    if agg_function == 'mean':
+        df = df.groupby(groupby).mean()[GOI]
+    elif agg_function == 'median':
+        df = df.groupby(groupby).median()[GOI]
+    elif agg_function == 'min':
+        df = df.groupby(groupby).min()[GOI]
+    elif agg_function == 'max':
+        df = df.groupby(groupby).max()[GOI]
+    else:
+        print(f"Unknown agg_function {agg_function}.")
+        return None
+
     norm_dim = 1
     if genes_on=='rows':
         df = df.T
@@ -438,35 +508,39 @@ def gex_clustermap(adata=None, GOI=None, groupby=None, use_raw=False,
         cbar_pos = None
     else:
         cbar_pos = (-0.02, 0.92, 0.05*cbar_shrink, 0.18*cbar_shrink)
-        
+    
+    cbar_kws = dict(ticks=[vmin, 0.50, vmax], orientation='horizontal')
+
     if standard_scale:
         g = sns.clustermap(df,
-                           method='complete',
-                           standard_scale=norm_dim,
-                           row_cluster=row_cluster,
-                           col_cluster=col_cluster,
-                           dendrogram_ratio=dendrogram_ratio,
-                           cmap='Reds',
-                           vmin=vmin,vmax=vmax,
-                           cbar_kws=dict(ticks=[vmin, 0.50, vmax], orientation='horizontal'),
-                           cbar_pos=cbar_pos,
-                           xticklabels=df.columns,
-                           yticklabels=df.index,
-                           figsize=figsize)
+                           method= cluster_method,
+                           standard_scale= norm_dim,
+                           row_cluster= row_cluster,
+                           col_cluster= col_cluster,
+                           dendrogram_ratio= dendrogram_ratio,
+                           cmap= 'Reds',
+                           vmin= vmin,
+                           vmax= vmax,
+                           cbar_kws= cbar_kws,
+                           cbar_pos= cbar_pos,
+                           xticklabels= df.columns,
+                           yticklabels= df.index,
+                           figsize= figsize)
     elif zscore:
         g = sns.clustermap(df,
-                           method='complete',
-                           z_score=norm_dim,
-                           row_cluster=row_cluster,
-                           col_cluster=col_cluster,
-                           dendrogram_ratio=dendrogram_ratio,
-                           cmap='RdBu_r',
-                           vmin=vmin,vmax=vmax,
-                           cbar_kws=dict(ticks=[vmin, 0, vmax], orientation='horizontal'),
-                           cbar_pos=cbar_pos,
-                           xticklabels=df.columns,
-                           yticklabels=df.index,
-                           figsize=figsize)
+                           method= cluster_method,
+                           z_score= norm_dim,
+                           row_cluster= row_cluster,
+                           col_cluster= col_cluster,
+                           dendrogram_ratio= dendrogram_ratio,
+                           cmap= 'RdBu_r',
+                           vmin= vmin,
+                           vmax= vmax,
+                           cbar_kws= cbar_kws,
+                           cbar_pos= cbar_pos,
+                           xticklabels= df.columns,
+                           yticklabels= df.index,
+                           figsize= figsize)
     
     g.ax_heatmap.set_yticks(np.arange(df.shape[0])+0.5)
     g.ax_heatmap.set_xticks(np.arange(df.shape[1])+0.5)

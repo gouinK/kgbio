@@ -21,6 +21,8 @@ def fix_plot(axs, plot_dict=None, fontdir=None):
     
     '''
     Convenience function to change matplotlib formatting.
+    
+    The default plot_dict attempts to make a decent-looking plot.
     default_plot_dict = {
                             'weight': 'regular',
                             'family': 'Helvetica',
@@ -38,6 +40,21 @@ def fix_plot(axs, plot_dict=None, fontdir=None):
                             'frame': True,
                             'subplot_behavior': True
                         }
+
+    Additional optional plot_dict keys:
+        'title' - axis title
+        'xlabel' - label for x-axis
+        'ylabel' - label for y-axis
+        'xticks' - list of x-axis ticks
+        'yticks' - list of y-axis ticks
+        'xticklabels' - list of x-axis tick labels
+        'yticklabels' - list of y-axis tick labels
+        'xlim' - tuple for x-axis limits
+        'ylim' - tuple for y-axis limits
+        'logx' - log10 transform x-axis
+        'logy' - log10 transform y-axis
+
+    Returns updated axs
     '''
 
     if fontdir is not None:

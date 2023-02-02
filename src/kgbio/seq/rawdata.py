@@ -43,7 +43,9 @@ def stream_fastq(fqfile):
 
 
 def readfastq(inpath):
-
+    """
+    Return SeqIO record dictionary (supports gzip and non-gzip fastq.)
+    """
     if '.gz' in inpath:
         with gzip.open(inpath, "rt") as handle:
             record_dict = SeqIO.to_dict(SeqIO.parse(handle,'fastq'))            
