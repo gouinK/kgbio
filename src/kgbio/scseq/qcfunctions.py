@@ -200,7 +200,11 @@ def qc_filtering(adata=None, percentile=5, mtThresh=10, scrublet=True, do_plot=F
 	if scrublet:
 		doublet_rate = 0.07
 		sc.external.pp.scrublet(adata, expected_doublet_rate=doublet_rate)
-		adata = adata[~adata.obs['predicted_doublet']].copy()
+		if np.sum(pd.isnull(adata.obs['predicted_doublet'])) > 0:
+			print("Found NaN result from scrublet, not filtering out doublets, please check manually.")
+		else:
+			print(f"Found {np.sum(adata.obs['predicted_doublet'])} doublets, now removing.")
+			adata = adata[~adata.obs['predicted_doublet']].copy()
 
 	geneThresh = np.percentile(adata.obs.n_genes_by_counts, q=percentile)
 	umiThresh = np.percentile(adata.obs.total_counts, q=percentile)
