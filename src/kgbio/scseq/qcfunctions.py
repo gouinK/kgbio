@@ -202,6 +202,7 @@ def qc_filtering(adata=None, percentile=5, mtThresh=10, scrublet=True, do_plot=F
 		sc.external.pp.scrublet(adata, expected_doublet_rate=doublet_rate)
 		if np.sum(pd.isnull(adata.obs['predicted_doublet'])) > 0:
 			print("Found NaN result from scrublet, not filtering out doublets, please check manually.")
+			adata.obs.drop(columns=['doublet_score','predicted_doublet'], inplace=True)
 		else:
 			print(f"Found {np.sum(adata.obs['predicted_doublet'])} doublets, now removing.")
 			adata = adata[~adata.obs['predicted_doublet']].copy()
