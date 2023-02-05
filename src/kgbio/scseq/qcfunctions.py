@@ -5,6 +5,7 @@ import scipy
 import random
 import sklearn
 import anndata
+import logging
 import itertools
 import celltypist
 import matplotlib

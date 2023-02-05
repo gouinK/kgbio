@@ -97,6 +97,8 @@ utils
 seq
     -> rawdata.py
 
+    -> post_aln.py
+
 scseq
     -> generalfunctions.py
 

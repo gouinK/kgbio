@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import matplotlib
 import seaborn as sns
+import logging
 from matplotlib import pyplot as plt
 from matplotlib import rcParams
 from matplotlib import font_manager

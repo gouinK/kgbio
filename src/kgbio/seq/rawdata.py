@@ -6,16 +6,12 @@ import gzip
 import h5py
 import pysam
 import scipy
-import matplotlib
+import logging
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from Bio import SeqIO
 from smart_open import open as sopen
-from matplotlib import pyplot as plt
-from matplotlib import rcParams
-from matplotlib.legend import Legend
-import matplotlib.gridspec as gridspec
 
 
 def stream_fastq(fqfile):
