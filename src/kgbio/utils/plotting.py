@@ -95,8 +95,12 @@ def fix_plot(axs, plot_dict=None, fontdir=None):
     plt.rcParams['font.weight'] = default_plot_dict['weight']
 
     _= axs.tick_params(axis= 'both', labelsize= default_plot_dict['fontsize'], pad= default_plot_dict['pad'])
-    _= axs.grid(visible= default_plot_dict['grid'])
     _= axs.set_frame_on(default_plot_dict['frame'])
+
+    if isinstance(default_plot_dict['grid'], bool):
+        _= axs.grid(visible= default_plot_dict['grid'], axis= 'both')
+    else:
+        _= axs.grid(axis= default_plot_dict['grid'])
 
     if 'xlim' in default_plot_dict.keys():
         _= axs.set_xlim(default_plot_dict['xlim'])
